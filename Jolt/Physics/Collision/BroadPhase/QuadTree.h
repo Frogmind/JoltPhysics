@@ -209,6 +209,20 @@ public:
 		AABox					mLeafBounds;
 	};
 
+	AABox						GetBounds() const {
+		auto rootId = GetCurrentRoot().GetNodeID();
+		if (rootId.IsNode()) {
+			uint32 node_idx = rootId.GetNodeIndex();
+			const Node& node = mAllocator->Get(node_idx);
+
+			AABox bounds;
+			node.GetNodeBounds(bounds);
+			return bounds;
+		}
+
+		return {};
+	}
+
 	/// Prepare adding inNumber bodies at ioBodyIDs to the quad tree, returns the state in outState that should be used in AddBodiesFinalize.
 	/// This can be done on a background thread without influencing the broadphase.
 	/// ioBodyIDs may be shuffled around by this function.

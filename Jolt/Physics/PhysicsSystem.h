@@ -33,6 +33,8 @@ public:
 								PhysicsSystem()												: mContactManager(mPhysicsSettings) JPH_IF_ENABLE_ASSERTS(, mConstraintManager(&mBodyManager)) { }
 								~PhysicsSystem();
 
+	AABox GetWorldBounds() const;
+
 	/// Initialize the system.
 	/// @param inMaxBodies Maximum number of bodies to support.
 	/// @param inNumBodyMutexes Number of body mutexes to use. Should be a power of 2 in the range [1, 64], use 0 to auto detect.

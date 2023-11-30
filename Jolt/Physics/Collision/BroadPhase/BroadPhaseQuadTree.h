@@ -19,6 +19,15 @@ public:
 	/// Destructor
 	virtual					~BroadPhaseQuadTree() override;
 
+	// HH Addition
+	AABox getBounds() const {
+		AABox bounds;
+		for (uint i = 0; i < mNumLayers; i++) {
+			bounds.Encapsulate(mLayers[i].GetBounds());
+		}
+		return bounds;
+	}
+
 	// Implementing interface of BroadPhase (see BroadPhase for documentation)
 	virtual void			Init(BodyManager *inBodyManager, const BroadPhaseLayerInterface &inLayerInterface) override;
 	virtual void			Optimize() override;

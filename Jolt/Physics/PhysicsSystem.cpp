@@ -69,6 +69,10 @@ PhysicsSystem::~PhysicsSystem()
 	delete mBroadPhase;
 }
 
+AABox PhysicsSystem::GetWorldBounds() const {
+	return static_cast<BroadPhaseQuadTree*>(mBroadPhase)->getBounds();
+}
+
 void PhysicsSystem::Init(uint inMaxBodies, uint inNumBodyMutexes, uint inMaxBodyPairs, uint inMaxContactConstraints, const BroadPhaseLayerInterface &inBroadPhaseLayerInterface, const ObjectVsBroadPhaseLayerFilter &inObjectVsBroadPhaseLayerFilter, const ObjectLayerPairFilter &inObjectLayerPairFilter)
 {
 	mObjectVsBroadPhaseLayerFilter = &inObjectVsBroadPhaseLayerFilter;
