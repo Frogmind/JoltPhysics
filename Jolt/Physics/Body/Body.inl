@@ -47,10 +47,13 @@ inline bool Body::sFindCollidingPairsCanCollide(const Body &inBody1, const Body 
 	// One of these conditions must be true
 	// - One of the bodies must be dynamic to collide
 	// - A sensor can collide with non-dynamic bodies
+
+	/*
 	if ((!inBody1.IsDynamic() && !inBody2.IsDynamic())
 		&& !sIsValidSensorBodyPair(inBody1, inBody2)
 		&& !sIsValidSensorBodyPair(inBody2, inBody1))
 		return false;
+	*/
 
 	// Check that body 1 is active
 	uint32 body1_index_in_active_bodies = inBody1.GetIndexInActiveBodiesInternal();

@@ -34,6 +34,12 @@ Body::Body(bool) :
 	sFixedToWorldShape.SetEmbedded();
 }
 
+Body::Body(bool, bool) : JPH::Body(false)
+{
+	mMotionProperties = new MotionProperties();
+	mMotionType = EMotionType::Kinematic;
+}
+
 void Body::SetMotionType(EMotionType inMotionType)
 {
 	if (mMotionType == inMotionType)
