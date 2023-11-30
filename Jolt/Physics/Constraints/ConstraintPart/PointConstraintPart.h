@@ -156,7 +156,18 @@ public:
 		// Calculate lagrange multiplier:
 		//
 		// lambda = -K^-1 (J v + b)
-		Vec3 lambda = mEffectiveMass * (ioBody1.GetLinearVelocity() - mR1.Cross(ioBody1.GetAngularVelocity()) - ioBody2.GetLinearVelocity() + mR2.Cross(ioBody2.GetAngularVelocity()));
+
+		auto body1_vel = ioBody1.GetLinearVelocity() + ioBody1.GetTemporaryVelocity();
+		auto body1_ang_vel = ioBody1.GetAngularVelocity() + ioBody1.GetTemporaryAngularVelocity();
+
+		auto body2_vel = ioBody2.GetLinearVelocity() + ioBody2.GetTemporaryVelocity();
+		auto body2_ang_vel = ioBody2.GetAngularVelocity() + ioBody2.GetTemporaryAngularVelocity();
+
+		Vec3 lambda = mEffectiveMass * (body1_vel - mR1.Cross(body1_ang_vel) - body2_vel + mR2.Cross(body2_ang_vel));
+		if (lambda.LengthSq() > mMaxForce * mMaxForce) {
+			lambda = lambda.Normalized() * mMaxForce;
+		}
+
 		mTotalLambda += lambda; // Store accumulated lambda
 		return ApplyVelocityStep(ioBody1, ioBody2, lambda);
 	}
@@ -227,6 +238,21 @@ public:
 		inStream.Read(mTotalLambda);
 	}
 
+	float GetMaxForce() const
+	{
+		return mMaxForce;
+	}
+
+	void SetMaxForce(float inMaxForce)
+	{
+		mMaxForce = inMaxForce;
+	}
+
+	void SetDamping(float inDamping)
+	{
+		mDamping = inDamping;
+	}
+
 private:
 	Vec3						mR1;
 	Vec3						mR2;
@@ -234,6 +260,8 @@ private:
 	Mat44						mInvI2_R2X;
 	Mat44						mEffectiveMass;
 	Vec3						mTotalLambda { Vec3::sZero() };
+	float						mMaxForce = 1e15f;
+	float 						mDamping = 1.0f;
 };
 
 JPH_NAMESPACE_END
