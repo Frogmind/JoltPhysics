@@ -89,8 +89,14 @@ void MotionProperties::ApplyForceTorqueAndDragInternal(QuatArg inBodyRotation, V
 	// Solution: v(t) = v(0) * e^(-c * t) or v2 = v1 * e^(-c * dt)
 	// Taylor expansion of e^(-c * dt) = 1 - c * dt + ...
 	// Since dt is usually in the order of 1/60 and c is a low number too this approximation is good enough
-	mLinearVelocity *= max(0.0f, 1.0f - mLinearDamping * inDeltaTime);
-	mAngularVelocity *= max(0.0f, 1.0f - mAngularDamping * inDeltaTime);
+
+	// mLinearVelocity *= max(0.0f, 1.0f - mLinearDamping * inDeltaTime);
+	// mAngularVelocity *= max(0.0f, 1.0f - mAngularDamping * inDeltaTime);
+
+	// HYPEHYPE: for backwards compatibility with bullet
+	mLinearVelocity *= powf(1.0f - mLinearDamping, inDeltaTime);
+	mAngularVelocity *= powf(1.0f - mAngularDamping, inDeltaTime);
+
 
 	// Clamp velocities
 	ClampLinearVelocity();
