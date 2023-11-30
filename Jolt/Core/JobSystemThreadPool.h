@@ -17,6 +17,16 @@ JPH_NAMESPACE_BEGIN
 // Things we're using from STL
 using std::thread;
 
+static thread_local int32_t sThreadIndex = 0;
+
+void SetWorkerThreadIndex(int32_t v) {
+	sThreadIndex = v;
+}
+
+int32_t GetWorkerThreadIndex() {
+	return sThreadIndex;
+}
+
 /// Implementation of a JobSystem using a thread pool
 ///
 /// Note that this is considered an example implementation. It is expected that when you integrate

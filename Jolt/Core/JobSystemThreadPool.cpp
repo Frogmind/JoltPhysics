@@ -270,6 +270,8 @@ void JobSystemThreadPool::ThreadMain(int inThreadIndex)
 	char name[64];
 	snprintf(name, sizeof(name), "Worker %d", int(inThreadIndex + 1));
 
+	SetWorkerThreadIndex(inThreadIndex + 1); // 0 is reserved for the main thread
+
 #if defined(JPH_PLATFORM_WINDOWS) && !defined(JPH_COMPILER_MINGW)
 	SetThreadName(name);
 #endif // JPH_PLATFORM_WINDOWS && !JPH_COMPILER_MINGW
