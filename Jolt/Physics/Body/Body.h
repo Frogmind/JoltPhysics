@@ -122,6 +122,13 @@ public:
 	inline float			GetRestitution() const											{ return mRestitution; }
 	void					SetRestitution(float inRestitution)								{ mRestitution = inRestitution; }
 
+	void					AddTemporaryVelocity(Vec3Arg inLinearVelocity)					{ JPH_ASSERT(!IsStatic()); mMotionProperties->AddTemporaryVelocity(inLinearVelocity); }
+	void					AddTemporaryAngularVelocity(Vec3Arg inAngularVelocity)			{ JPH_ASSERT(!IsStatic()); mMotionProperties->AddTemporaryAngularVelocity(inAngularVelocity); }
+
+	inline Vec3				GetTemporaryVelocity() const									{ return !IsStatic()? mMotionProperties->GetTemporaryVelocity() : Vec3::sZero(); }	
+	inline Vec3				GetTemporaryAngularVelocity() const 							{ return !IsStatic()? mMotionProperties->GetTemporaryAngularVelocity() : Vec3::sZero(); }
+
+
 	/// Get world space linear velocity of the center of mass (unit: m/s)
 	inline Vec3				GetLinearVelocity() const										{ return !IsStatic()? mMotionProperties->GetLinearVelocity() : Vec3::sZero(); }
 

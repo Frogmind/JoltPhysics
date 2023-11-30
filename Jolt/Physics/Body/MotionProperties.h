@@ -33,6 +33,17 @@ public:
 	/// Motion quality, or how well it detects collisions when it has a high velocity
 	EMotionQuality			GetMotionQuality() const										{ return mMotionQuality; }
 
+	inline void ClearTemporaryVelocities() {
+		mTemporaryVelocity = Vec3::sZero();
+		mTemporaryAngularVelocity = Vec3::sZero();
+	}
+
+	inline Vec3				GetTemporaryVelocity() const { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::Read)); return mTemporaryVelocity; }
+	inline Vec3				GetTemporaryAngularVelocity() const { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::Read)); return mTemporaryAngularVelocity; }		
+
+	void					AddTemporaryVelocity(Vec3Arg inLinearVelocity) { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); mTemporaryVelocity += inLinearVelocity; }
+	void					AddTemporaryAngularVelocity(Vec3Arg inAngularVelocity) { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); mTemporaryAngularVelocity += inAngularVelocity; }
+
 	/// Get the allowed degrees of freedom that this body has (this can be changed by calling SetMassProperties)
 	inline EAllowedDOFs		GetAllowedDOFs() const											{ return mAllowedDOFs; }
 
@@ -199,6 +210,8 @@ private:
 	// 16 byte aligned
 	Vec3					mLinearVelocity { Vec3::sZero() };								///< World space linear velocity of the center of mass (m/s)
 	Vec3					mAngularVelocity { Vec3::sZero() };								///< World space angular velocity (rad/s)
+	Vec3					mTemporaryVelocity { Vec3::sZero() };							///< Temporary velocity applied only for single frame. Used to accomodate movement applied outside of physics system.
+	Vec3					mTemporaryAngularVelocity { Vec3::sZero() };					///< Temporary velocity applied only for single frame. Used to accomodate movement applied outside of physics system.
 	Vec3					mInvInertiaDiagonal;											///< Diagonal of inverse inertia matrix: D
 	Quat					mInertiaRotation;												///< Rotation (R) that takes inverse inertia diagonal to local space: Ibody^-1 = R * D * R^-1
 

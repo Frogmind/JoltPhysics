@@ -39,6 +39,14 @@ JPH_NAMESPACE_BEGIN
 /// \f$K^{-1} = \left( J M^{-1} J^T \right)^{-1}\f$ = effective mass.\n
 /// b = velocity bias.\n
 /// \f$\beta\f$ = baumgarte constant.
+///
+
+enum class ConstraintUseCase
+{
+	Default,
+	Friction
+};
+
 class AxisConstraintPart
 {
 	/// Internal helper function to update velocities of bodies after Lagrange multiplier is calculated
@@ -384,25 +392,59 @@ public:
 	}
 
 	/// Templated form of SolveVelocityConstraint with the motion types baked in, part 1: get the total lambda
-	template <EMotionType Type1, EMotionType Type2>
+	template <EMotionType Type1, EMotionType Type2, ConstraintUseCase UseCase = ConstraintUseCase::Default>
 	JPH_INLINE float			TemplatedSolveVelocityConstraintGetTotalLambda(const MotionProperties *ioMotionProperties1, const MotionProperties *ioMotionProperties2, Vec3Arg inWorldSpaceAxis) const
 	{
 		// Calculate jacobian multiplied by linear velocity
 		float jv;
-		if constexpr (Type1 != EMotionType::Static && Type2 != EMotionType::Static)
-			jv = inWorldSpaceAxis.Dot(ioMotionProperties1->GetLinearVelocity() - ioMotionProperties2->GetLinearVelocity());
-		else if constexpr (Type1 != EMotionType::Static)
-			jv = inWorldSpaceAxis.Dot(ioMotionProperties1->GetLinearVelocity());
-		else if constexpr (Type2 != EMotionType::Static)
-			jv = inWorldSpaceAxis.Dot(-ioMotionProperties2->GetLinearVelocity());
-		else
-			JPH_ASSERT(false); // Static vs static is nonsensical!
 
-		// Calculate jacobian multiplied by angular velocity
-		if constexpr (Type1 != EMotionType::Static)
-			jv += Vec3::sLoadFloat3Unsafe(mR1PlusUxAxis).Dot(ioMotionProperties1->GetAngularVelocity());
-		if constexpr (Type2 != EMotionType::Static)
-			jv -= Vec3::sLoadFloat3Unsafe(mR2xAxis).Dot(ioMotionProperties2->GetAngularVelocity());
+		// in friction, we ignore dynamic objects temporary velocities
+		if constexpr (UseCase == ConstraintUseCase::Friction) {
+			JPH::Vec3 totalLinearVelocity{ JPH::Vec3::sZero() };
+			if constexpr (Type1 == EMotionType::Kinematic) {
+				totalLinearVelocity += ioMotionProperties1->GetLinearVelocity() + ioMotionProperties1->GetTemporaryVelocity();
+			}
+			if constexpr (Type2 == EMotionType::Kinematic) {
+				totalLinearVelocity -= ioMotionProperties2->GetLinearVelocity() + ioMotionProperties2->GetTemporaryVelocity();
+			}
+
+			if constexpr (Type1 == EMotionType::Dynamic) {
+				totalLinearVelocity += ioMotionProperties1->GetLinearVelocity();
+			}
+			if constexpr (Type2 == EMotionType::Dynamic) {
+				totalLinearVelocity -= ioMotionProperties2->GetLinearVelocity();
+			}
+
+			jv = inWorldSpaceAxis.Dot(totalLinearVelocity);
+
+			// Calculate jacobian multiplied by angular velocity
+			if constexpr (Type1 == EMotionType::Kinematic)
+				jv += Vec3::sLoadFloat3Unsafe(mR1PlusUxAxis).Dot(ioMotionProperties1->GetAngularVelocity() + ioMotionProperties1->GetTemporaryAngularVelocity());
+			if constexpr (Type2 == EMotionType::Kinematic)
+				jv -= Vec3::sLoadFloat3Unsafe(mR2xAxis).Dot(ioMotionProperties2->GetAngularVelocity() + ioMotionProperties2->GetTemporaryAngularVelocity());
+
+			if constexpr (Type1 == EMotionType::Dynamic)
+				jv += Vec3::sLoadFloat3Unsafe(mR1PlusUxAxis).Dot(ioMotionProperties1->GetAngularVelocity());
+			if constexpr (Type2 == EMotionType::Dynamic)
+				jv -= Vec3::sLoadFloat3Unsafe(mR2xAxis).Dot(ioMotionProperties2->GetAngularVelocity());
+
+		}
+		else {
+			if constexpr (Type1 != EMotionType::Static && Type2 != EMotionType::Static)
+				jv = inWorldSpaceAxis.Dot(ioMotionProperties1->GetLinearVelocity() + ioMotionProperties1->GetTemporaryVelocity() - ioMotionProperties2->GetLinearVelocity() - ioMotionProperties2->GetTemporaryVelocity());
+			else if constexpr (Type1 != EMotionType::Static)
+				jv = inWorldSpaceAxis.Dot(ioMotionProperties1->GetLinearVelocity() + ioMotionProperties1->GetTemporaryVelocity());
+			else if constexpr (Type2 != EMotionType::Static)
+				jv = inWorldSpaceAxis.Dot(-ioMotionProperties2->GetLinearVelocity() - ioMotionProperties2->GetTemporaryVelocity());
+			else
+				JPH_ASSERT(false); // Static vs static is nonsensical!
+
+			// Calculate jacobian multiplied by angular velocity
+			if constexpr (Type1 != EMotionType::Static)
+				jv += Vec3::sLoadFloat3Unsafe(mR1PlusUxAxis).Dot(ioMotionProperties1->GetAngularVelocity() + ioMotionProperties1->GetTemporaryAngularVelocity());
+			if constexpr (Type2 != EMotionType::Static)
+				jv -= Vec3::sLoadFloat3Unsafe(mR2xAxis).Dot(ioMotionProperties2->GetAngularVelocity() + ioMotionProperties2->GetTemporaryAngularVelocity());
+		}
 
 		// Lagrange multiplier is:
 		//
@@ -414,7 +456,7 @@ public:
 	}
 
 	/// Templated form of SolveVelocityConstraint with the motion types baked in, part 2: apply new lambda
-	template <EMotionType Type1, EMotionType Type2>
+	template <EMotionType Type1, EMotionType Type2, ConstraintUseCase UseCase = ConstraintUseCase::Default>
 	JPH_INLINE bool				TemplatedSolveVelocityConstraintApplyLambda(MotionProperties *ioMotionProperties1, float inInvMass1, MotionProperties *ioMotionProperties2, float inInvMass2, Vec3Arg inWorldSpaceAxis, float inTotalLambda)
 	{
 		float delta_lambda = inTotalLambda - mTotalLambda; // Calculate change in lambda
@@ -424,10 +466,10 @@ public:
 	}
 
 	/// Templated form of SolveVelocityConstraint with the motion types baked in
-	template <EMotionType Type1, EMotionType Type2>
+	template <EMotionType Type1, EMotionType Type2, ConstraintUseCase UseCase = ConstraintUseCase::Default>
 	inline bool					TemplatedSolveVelocityConstraint(MotionProperties *ioMotionProperties1, float inInvMass1, MotionProperties *ioMotionProperties2, float inInvMass2, Vec3Arg inWorldSpaceAxis, float inMinLambda, float inMaxLambda)
 	{
-		float total_lambda = TemplatedSolveVelocityConstraintGetTotalLambda<Type1, Type2>(ioMotionProperties1, ioMotionProperties2, inWorldSpaceAxis);
+		float total_lambda = TemplatedSolveVelocityConstraintGetTotalLambda<Type1, Type2, UseCase>(ioMotionProperties1, ioMotionProperties2, inWorldSpaceAxis);
 
 		// Clamp impulse to specified range
 		total_lambda = Clamp(total_lambda, inMinLambda, inMaxLambda);

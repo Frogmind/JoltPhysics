@@ -1509,8 +1509,8 @@ JPH_INLINE bool ContactConstraintManager::sSolveVelocityConstraint(ContactConstr
 			JPH_ASSERT(wcp.mFrictionConstraint2.IsActive());
 
 			// Calculate impulse to stop motion in tangential direction
-			float lambda1 = wcp.mFrictionConstraint1.TemplatedSolveVelocityConstraintGetTotalLambda<Type1, Type2>(ioMotionProperties1, ioMotionProperties2, t1);
-			float lambda2 = wcp.mFrictionConstraint2.TemplatedSolveVelocityConstraintGetTotalLambda<Type1, Type2>(ioMotionProperties1, ioMotionProperties2, t2);
+			float lambda1 = wcp.mFrictionConstraint1.TemplatedSolveVelocityConstraintGetTotalLambda<Type1, Type2, ConstraintUseCase::Friction>(ioMotionProperties1, ioMotionProperties2, t1);
+			float lambda2 = wcp.mFrictionConstraint2.TemplatedSolveVelocityConstraintGetTotalLambda<Type1, Type2, ConstraintUseCase::Friction>(ioMotionProperties1, ioMotionProperties2, t2);
 			float total_lambda_sq = Square(lambda1) + Square(lambda2);
 
 			// Calculate max impulse that can be applied. Note that we're using the non-penetration impulse from the previous iteration here.

@@ -78,6 +78,9 @@ public:
 	///@name Get Lagrange multiplier from last physics update (the linear impulse applied to satisfy the constraint)
 	inline Vec3		 			GetTotalLambdaPosition() const								{ return mPointConstraintPart.GetTotalLambda(); }
 
+	inline Vec3 GetPivotInA_LocalSpace() const { return mLocalSpacePosition1; }
+	inline Vec3 GetPivotInB_LocalSpace() const { return mLocalSpacePosition2; }
+
 private:
 	// Internal helper function to calculate the values below
 	void						CalculateConstraintProperties();
