@@ -184,6 +184,11 @@ public:
 	/// Destructor
 	virtual							~Shape() = default;
 
+
+	int32_t GetHypeHypeIndex() const { return mHypehypeIndex; }
+	void SetHypeHypeIndex(int32_t v) { mHypehypeIndex = v; }
+
+
 	/// Get type
 	inline EShapeType				GetType() const														{ return mShapeType; }
 	inline EShapeSubType			GetSubType() const													{ return mShapeSubType; }
@@ -429,6 +434,7 @@ protected:
 
 private:
 	uint64							mUserData = 0;
+	int32_t							mHypehypeIndex = 0;
 	EShapeType						mShapeType;
 	EShapeSubType					mShapeSubType;
 };
