@@ -42,6 +42,13 @@ public:
 	/// Destructor
 							~Body()															{ JPH_ASSERT(mMotionProperties == nullptr); }
 
+	void HypehypeClearMotionProperties() {
+		mMotionProperties->SetLinearVelocity(Vec3::sZero());
+		mMotionProperties->SetAngularVelocity(Vec3::sZero());
+		mMotionProperties->ResetForce();
+		mMotionProperties->ResetTorque();
+	}
+
 	/// Get the id of this body
 	inline const BodyID &	GetID() const													{ return mID; }
 
@@ -314,11 +321,12 @@ public:
 
 	static constexpr uint32	cInactiveIndex = MotionProperties::cInactiveIndex;				///< Constant indicating that body is not active
 
+	explicit				Body(bool, bool); // hehe even more alternative. difference is we allow motion properties. used for dummy bodies in drag joints to allow for nicer velocity updates.
+
 private:
 	friend class BodyManager;
 
 	explicit				Body(bool);														///< Alternative constructor that initializes all members
-	explicit				Body(bool, bool); // hehe even more alternative. difference is we allow motion properties. used for dummy bodies in drag joints to allow for nicer velocity updates.
 
 	inline void				GetSleepTestPoints(RVec3 *outPoints) const;						///< Determine points to test for checking if body is sleeping: COM, COM + largest bounding box axis, COM + second largest bounding box axis
 	inline void				ResetSleepTestSpheres();										///< Reset spheres to current position as returned by GetSleepTestPoints

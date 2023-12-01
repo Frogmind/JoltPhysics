@@ -23,6 +23,16 @@
 
 JPH_NAMESPACE_BEGIN
 
+static thread_local int32_t sThreadIndex = 0;
+
+void SetWorkerThreadIndex(int32_t v) {
+	sThreadIndex = v;
+}
+
+int32_t GetWorkerThreadIndex() {
+	return sThreadIndex;
+}
+
 void JobSystemThreadPool::Init(uint inMaxJobs, uint inMaxBarriers, int inNumThreads)
 {
 	JobSystemWithBarrier::Init(inMaxBarriers);
