@@ -37,6 +37,7 @@ inline float ConvertFrictionFromU16(uint16_t value) {
 }
 
 inline uint16_t ConvertFrictionToU16(float value) {
+	JPH_ASSERT(value >= 0.0f && value <= FRICTION_MAX);
 	return uint16_t(value * UINT16_MAX / FRICTION_MAX);
 }
 
@@ -45,6 +46,7 @@ inline float ConvertFrictionFromU8(uint8_t value) {
 }
 
 inline uint8_t ConvertFrictionToU8(float value) {
+	JPH_ASSERT(value >= 0.0f && value <= FRICTION_MAX);
 	return uint8_t(value * UINT8_MAX / FRICTION_MAX);
 }
 
@@ -53,6 +55,7 @@ inline float ConvertRestitutionFromU8(uint8_t value) {
 }
 
 inline uint8_t ConvertRestitutionToU8(float value) {
+	JPH_ASSERT(value >= 0.0f && value <= 1.0f);
 	return uint8_t(value * UINT8_MAX);
 }
 
