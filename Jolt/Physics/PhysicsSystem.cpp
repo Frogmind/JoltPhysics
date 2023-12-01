@@ -953,6 +953,7 @@ void PhysicsSystem::ProcessBodyPair(ContactAllocator &ioContactAllocator, const 
 		return;
 	}
 
+#if 0
 	// Ensure that body1 is dynamic, this ensures that we do the collision detection in the space of a moving body, which avoids accuracy problems when testing a very large static object against a small dynamic object
 	// Ensure that body1 id < body2 id for dynamic vs dynamic
 	// Keep body order unchanged when colliding with a sensor
@@ -960,6 +961,13 @@ void PhysicsSystem::ProcessBodyPair(ContactAllocator &ioContactAllocator, const 
 		&& !body2->IsSensor())
 		swap(body1, body2);
 	JPH_ASSERT(body1->IsDynamic() || body2->IsSensor());
+#else
+	bool swap_yes = !body1->IsDynamic() && body2->IsDynamic();
+	bool swap_no = body1->IsDynamic() && !body2->IsDynamic();
+	bool swap_id = !swap_no && (inBodyPair.mBodyB < inBodyPair.mBodyA);
+	if (swap_yes || swap_id)
+		swap(body1, body2);
+#endif
 
 	// Check if the contact points from the previous frame are reusable and if so copy them
 	bool pair_handled = false, constraint_created = false;
@@ -1017,7 +1025,7 @@ void PhysicsSystem::ProcessBodyPair(ContactAllocator &ioContactAllocator, const 
 					// One of the following should be true:
 					// - Body 1 is dynamic and body 2 may be dynamic, static or kinematic
 					// - Body 1 is not dynamic in which case body 2 should be a sensor
-					JPH_ASSERT(mBody1->IsDynamic() || mBody2->IsSensor());
+					// JPH_ASSERT(mBody1->IsDynamic() || mBody2->IsSensor());
 					JPH_ASSERT(!ShouldEarlyOut());
 
 					// Test if we want to accept this hit
