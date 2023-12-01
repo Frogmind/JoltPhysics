@@ -34,7 +34,7 @@ JPH_IMPLEMENT_SERIALIZABLE_NON_VIRTUAL(CompoundShapeSettings::SubShapeSettings)
 	JPH_ADD_ATTRIBUTE(CompoundShapeSettings::SubShapeSettings, mUserData)
 }
 
-void CompoundShapeSettings::AddShape(Vec3Arg inPosition, QuatArg inRotation, const ShapeSettings *inShape, uint32 inUserData)
+void CompoundShapeSettings::AddShape(Vec3Arg inPosition, QuatArg inRotation, const ShapeSettings *inShape, uint64 inUserData)
 {
 	// Add shape
 	SubShapeSettings shape;
@@ -45,7 +45,7 @@ void CompoundShapeSettings::AddShape(Vec3Arg inPosition, QuatArg inRotation, con
 	mSubShapes.push_back(shape);
 }
 
-void CompoundShapeSettings::AddShape(Vec3Arg inPosition, QuatArg inRotation, const Shape *inShape, uint32 inUserData)
+void CompoundShapeSettings::AddShape(Vec3Arg inPosition, QuatArg inRotation, const Shape *inShape, uint64 inUserData)
 {
 	// Add shape
 	SubShapeSettings shape;

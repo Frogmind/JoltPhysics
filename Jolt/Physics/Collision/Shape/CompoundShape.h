@@ -23,10 +23,10 @@ public:
 									CompoundShapeSettings() = default;
 
 	/// Add a shape to the compound.
-	void							AddShape(Vec3Arg inPosition, QuatArg inRotation, const ShapeSettings *inShape, uint32 inUserData = 0);
+	void							AddShape(Vec3Arg inPosition, QuatArg inRotation, const ShapeSettings *inShape, uint64 inUserData = 0);
 
 	/// Add a shape to the compound. Variant that uses a concrete shape, which means this object cannot be serialized.
-	void							AddShape(Vec3Arg inPosition, QuatArg inRotation, const Shape *inShape, uint32 inUserData = 0);
+	void							AddShape(Vec3Arg inPosition, QuatArg inRotation, const Shape *inShape, uint64 inUserData = 0);
 
 	struct SubShapeSettings
 	{
@@ -36,7 +36,7 @@ public:
 		RefConst<Shape>				mShapePtr;												///< Sub shape (either this or mShape needs to be filled up)
 		Vec3						mPosition;												///< Position of the sub shape
 		Quat						mRotation;												///< Rotation of the sub shape
-		uint32						mUserData = 0;											///< User data value (can be used by the application for any purpose)
+		uint64						mUserData = 0;											///< User data value (can be used by the application for any purpose)
 	};
 
 	using SubShapes = Array<SubShapeSettings>;
@@ -231,12 +231,12 @@ public:
 		RefConst<Shape>				mShape;
 		Float3						mPositionCOM;											///< Note: Position of center of mass of sub shape!
 		Float3						mRotation;												///< Note: X, Y, Z of rotation quaternion - note we read 4 bytes beyond this so make sure there's something there
-		uint32						mUserData;												///< User data value (put here because it falls in padding bytes)
+		uint64						mUserData;												///< User data value (put here because it falls in padding bytes)
 		bool						mIsRotationIdentity;									///< If mRotation is close to identity (put here because it falls in padding bytes)
 		// 3 padding bytes left
 	};
 
-	static_assert(sizeof(SubShape) == (JPH_CPU_ADDRESS_BITS == 64? 40 : 36), "Compiler added unexpected padding");
+	static_assert(sizeof(SubShape) == (JPH_CPU_ADDRESS_BITS == 64 ? 48 : 40), "Compiler added unexpected padding");
 
 	using SubShapes = Array<SubShape>;
 
@@ -250,7 +250,7 @@ public:
 	const SubShape &				GetSubShape(uint inIdx) const							{ return mSubShapes[inIdx]; }
 
 	/// Get the user data associated with a shape in this compound
-	uint32							GetCompoundUserData(uint inIdx) const					{ return mSubShapes[inIdx].mUserData; }
+	uint64							GetCompoundUserData(uint inIdx) const					{ return mSubShapes[inIdx].mUserData; }
 
 	/// Set the user data associated with a shape in this compound
 	void							SetCompoundUserData(uint inIdx, uint32 inUserData)		{ mSubShapes[inIdx].mUserData = inUserData; }
