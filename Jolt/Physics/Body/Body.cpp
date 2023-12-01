@@ -26,8 +26,6 @@ Body::Body(bool) :
 	mPosition(Vec3::sZero()),
 	mRotation(Quat::sIdentity()),
 	mShape(&sFixedToWorldShape), // Dummy shape
-	mFriction(0.0f),
-	mRestitution(0.0f),
 	mObjectLayer(cObjectLayerInvalid),
 	mMotionType(EMotionType::Static)
 {
@@ -345,6 +343,9 @@ BodyCreationSettings Body::GetBodyCreationSettings() const
 	result.mMotionQuality = mMotionProperties != nullptr? mMotionProperties->GetMotionQuality() : EMotionQuality::Discrete;
 	result.mAllowSleeping = mMotionProperties != nullptr? GetAllowSleeping() : true;
 	result.mFriction = GetFriction();
+	result.mRollingFriction = GetRollingFriction();
+	result.mSpinningFriction = GetSpinningFriction();
+	result.mAnisotropicFriction = GetAnisotropicFriction();
 	result.mRestitution = GetRestitution();
 	result.mLinearDamping = mMotionProperties != nullptr? mMotionProperties->GetLinearDamping() : 0.0f;
 	result.mAngularDamping = mMotionProperties != nullptr? mMotionProperties->GetAngularDamping() : 0.0f;
@@ -371,6 +372,9 @@ SoftBodyCreationSettings Body::GetSoftBodyCreationSettings() const
 	result.mObjectLayer = GetObjectLayer();
 	result.mCollisionGroup = GetCollisionGroup();
 	result.mFriction = GetFriction();
+	result.mRollingFriction = GetRollingFriction();
+	result.mSpinningFriction = GetSpinningFriction();
+	result.mAnisotropicFriction = GetAnisotropicFriction();
 	result.mRestitution = GetRestitution();
 	const SoftBodyMotionProperties *mp = static_cast<const SoftBodyMotionProperties *>(mMotionProperties);
 	result.mNumIterations = mp->GetNumIterations();

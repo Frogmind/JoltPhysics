@@ -19,6 +19,43 @@
 
 JPH_NAMESPACE_BEGIN
 
+struct FrictionRestitutionProperties {
+	uint16_t mFriction = 0; ///< Friction of the body (dimensionless number, usually between 0 and 1, 0 = no friction, 1 = friction force equals force that presses the two bodies together). Note that bodies can have negative friction but the combined friction (see PhysicsSystem::SetCombineFriction) should never go below zero.
+	uint8_t mRestitution = 0; ///< Restitution of body (dimensionless number, usually between 0 and 1, 0 = completely inelastic collision response, 1 = completely elastic collision response). Note that bodies can have negative restitution but the combined restitution (see PhysicsSystem::SetCombineRestitution) should never go below zero.
+
+	uint8_t mRollingFriction = 0;
+	uint8_t mSpinningFriction = 0;
+	uint8_t mAnisotropicFrictionX = 0;
+	uint8_t mAnisotropicFrictionY = 0;
+	uint8_t mAnisotropicFrictionZ = 0;
+};
+
+constexpr float FRICTION_MAX = 4.0f;
+
+inline float ConvertFrictionFromU16(uint16_t value) {
+	return value * FRICTION_MAX / UINT16_MAX;
+}
+
+inline uint16_t ConvertFrictionToU16(float value) {
+	return uint16_t(value * UINT16_MAX / FRICTION_MAX);
+}
+
+inline float ConvertFrictionFromU8(uint8_t value) {
+	return value * FRICTION_MAX / UINT8_MAX;
+}
+
+inline uint8_t ConvertFrictionToU8(float value) {
+	return uint8_t(value * UINT8_MAX / FRICTION_MAX);
+}
+
+inline float ConvertRestitutionFromU8(uint8_t value) {
+	return float(value) / UINT8_MAX;
+}
+
+inline uint8_t ConvertRestitutionToU8(float value) {
+	return uint8_t(value * UINT8_MAX);
+}
+
 class StateRecorder;
 class BodyCreationSettings;
 class SoftBodyCreationSettings;
@@ -122,12 +159,52 @@ public:
 	void					SetAllowSleeping(bool inAllow);
 
 	/// Friction (dimensionless number, usually between 0 and 1, 0 = no friction, 1 = friction force equals force that presses the two bodies together). Note that bodies can have negative friction but the combined friction (see PhysicsSystem::SetCombineFriction) should never go below zero.
-	inline float			GetFriction() const												{ return mFriction; }
-	void					SetFriction(float inFriction)									{ mFriction = inFriction; }
+	inline float GetFriction() const {
+		return ConvertFrictionFromU16(mFrictionRestitution.mFriction);
+	}
+
+	inline float GetRollingFriction() const {
+		return ConvertFrictionFromU16(mFrictionRestitution.mRollingFriction);
+	}
+
+	inline float GetSpinningFriction() const {
+		return ConvertFrictionFromU16(mFrictionRestitution.mSpinningFriction);
+	}
+
+	inline RVec3 GetAnisotropicFriction() const {
+		return {
+			ConvertFrictionFromU16(mFrictionRestitution.mAnisotropicFrictionX),
+			ConvertFrictionFromU16(mFrictionRestitution.mAnisotropicFrictionY),
+			ConvertFrictionFromU16(mFrictionRestitution.mAnisotropicFrictionZ),
+		};
+	}
+
+	void SetFriction(float inFriction) {
+		mFrictionRestitution.mFriction = ConvertFrictionToU16(inFriction);
+	}
+
+	void SetRollingFriction(float inRollingFriction) {
+		mFrictionRestitution.mRollingFriction = ConvertFrictionToU8(inRollingFriction);
+	}
+
+	void SetSpinningFriction(float inSpinningFriction) {
+		mFrictionRestitution.mSpinningFriction = ConvertFrictionToU8(inSpinningFriction);
+	}
+
+	void SetAnisotropicFriction(RVec3Arg inAnisotropicFriction) {
+		mFrictionRestitution.mAnisotropicFrictionX = ConvertFrictionToU8(inAnisotropicFriction.GetX());
+		mFrictionRestitution.mAnisotropicFrictionY = ConvertFrictionToU8(inAnisotropicFriction.GetY());
+		mFrictionRestitution.mAnisotropicFrictionZ = ConvertFrictionToU8(inAnisotropicFriction.GetZ());
+	}
 
 	/// Restitution (dimensionless number, usually between 0 and 1, 0 = completely inelastic collision response, 1 = completely elastic collision response). Note that bodies can have negative restitution but the combined restitution (see PhysicsSystem::SetCombineRestitution) should never go below zero.
-	inline float			GetRestitution() const											{ return mRestitution; }
-	void					SetRestitution(float inRestitution)								{ mRestitution = inRestitution; }
+	inline float GetRestitution() const {
+		return ConvertRestitutionFromU8(mFrictionRestitution.mRestitution);
+	}
+
+	void SetRestitution(float inRestitution) {
+		mFrictionRestitution.mRestitution = ConvertRestitutionToU8(inRestitution);
+	}
 
 	void					AddTemporaryVelocity(Vec3Arg inLinearVelocity)					{ JPH_ASSERT(!IsStatic()); mMotionProperties->AddTemporaryVelocity(inLinearVelocity); }
 	void					AddTemporaryAngularVelocity(Vec3Arg inAngularVelocity)			{ JPH_ASSERT(!IsStatic()); mMotionProperties->AddTemporaryAngularVelocity(inAngularVelocity); }
@@ -352,11 +429,10 @@ private:
 	CollisionGroup			mCollisionGroup;												///< The collision group this body belongs to (determines if two objects can collide)
 
 	// 4 byte aligned
-	float					mFriction;														///< Friction of the body (dimensionless number, usually between 0 and 1, 0 = no friction, 1 = friction force equals force that presses the two bodies together). Note that bodies can have negative friction but the combined friction (see PhysicsSystem::SetCombineFriction) should never go below zero.
-	float					mRestitution;													///< Restitution of body (dimensionless number, usually between 0 and 1, 0 = completely inelastic collision response, 1 = completely elastic collision response). Note that bodies can have negative restitution but the combined restitution (see PhysicsSystem::SetCombineRestitution) should never go below zero.
 	BodyID					mID;															///< ID of the body (index in the bodies array)
 
 	// 2 or 4 bytes aligned
+	FrictionRestitutionProperties mFrictionRestitution;
 	ObjectLayer				mObjectLayer;													///< The collision layer this body belongs to (determines if two objects can collide)
 
 	// 1 byte aligned
