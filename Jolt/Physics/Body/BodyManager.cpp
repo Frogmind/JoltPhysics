@@ -220,7 +220,15 @@ Body *BodyManager::AllocateBody(const BodyCreationSettings &inBodyCreationSettin
 		mp->mAllowSleeping = inBodyCreationSettings.mAllowSleeping;
 		JPH_IF_ENABLE_ASSERTS(mp->mCachedBodyType = body->mBodyType;)
 		JPH_IF_ENABLE_ASSERTS(mp->mCachedMotionType = body->mMotionType;)
-		mp->SetMassProperties(inBodyCreationSettings.mAllowedDOFs, inBodyCreationSettings.GetMassProperties());
+
+		if (body->mMotionType == EMotionType::Static)
+		{
+			mp->SetMassPropertiesForStatic();
+		}
+		else
+		{
+			mp->SetMassProperties(inBodyCreationSettings.mAllowedDOFs, inBodyCreationSettings.GetMassProperties());
+		}
 	}
 
 	// Position body

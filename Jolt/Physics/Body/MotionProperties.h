@@ -100,6 +100,7 @@ public:
 	void					SetGravityFactor(float inGravityFactor)							{ mGravityFactor = inGravityFactor; }
 
 	/// Set the mass and inertia tensor
+	void					SetMassPropertiesForStatic();
 	void					SetMassProperties(EAllowedDOFs inAllowedDOFs, const MassProperties &inMassProperties);
 
 	/// Get inverse mass (1 / mass). Should only be called on a dynamic object (static or kinematic bodies have infinite mass so should be treated as 1 / mass = 0)
