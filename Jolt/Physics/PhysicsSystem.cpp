@@ -1482,6 +1482,7 @@ void PhysicsSystem::JobIntegrateVelocity(const PhysicsUpdateContext *ioContext, 
 			// too as simulating the rotation first may cause it to tunnel through a small object that the linear cast might have otherwise dectected. In any case a linear cast is not good for detecting
 			// tunneling due to angular rotation, so we don't care about that too much (you'd need a full cast to take angular effects into account).
 			body.AddRotationStep(body.GetAngularVelocity() * delta_time);
+			body.AddForcedRotationStep(body.GetTemporaryAngularVelocity() * delta_time);
 
 			// Get delta position
 			Vec3 delta_pos = body.GetLinearVelocity() * delta_time;
@@ -1522,6 +1523,7 @@ void PhysicsSystem::JobIntegrateVelocity(const PhysicsUpdateContext *ioContext, 
 			{
 				// Move the body now
 				body.AddPositionStep(delta_pos);
+				body.AddForcedPositionStep(body.GetTemporaryVelocity() * delta_time);
 
 				// If the body was activated due to an earlier CCD step it will have an index in the active
 				// body list that it higher than the highest one we processed during FindCollisions
@@ -1543,6 +1545,7 @@ void PhysicsSystem::JobIntegrateVelocity(const PhysicsUpdateContext *ioContext, 
 				ioStep->mActiveBodyToCCDBody[active_body_idx] = -1;
 			}
 
+			body.ClearTemporaryVelocities();
 			active_body_idx++;
 		}
 	}

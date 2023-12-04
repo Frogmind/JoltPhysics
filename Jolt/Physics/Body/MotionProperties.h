@@ -47,6 +47,22 @@ public:
 	/// Get the allowed degrees of freedom that this body has (this can be changed by calling SetMassProperties)
 	inline EAllowedDOFs		GetAllowedDOFs() const											{ return mAllowedDOFs; }
 
+	inline Vec3 GetLinearAllowedDOFs() const {
+		return {
+			bool(mAllowedDOFs & EAllowedDOFs::TranslationX) ? 1.0f : 0.0f,
+			bool(mAllowedDOFs & EAllowedDOFs::TranslationY) ? 1.0f : 0.0f,
+			bool(mAllowedDOFs & EAllowedDOFs::TranslationZ) ? 1.0f : 0.0f,
+		};
+	}
+
+	inline Vec3 GetAngularAllowedDOFs() const {
+		return {
+			bool(mAllowedDOFs & EAllowedDOFs::RotationX) ? 1.0f : 0.0f,
+			bool(mAllowedDOFs & EAllowedDOFs::RotationY) ? 1.0f : 0.0f,
+			bool(mAllowedDOFs & EAllowedDOFs::RotationZ) ? 1.0f : 0.0f,
+		};
+	}
+
 	/// If this body can go to sleep.
 	inline bool				GetAllowSleeping() const										{ return mAllowSleeping; }
 
