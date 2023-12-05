@@ -25,9 +25,9 @@ struct FrictionRestitutionProperties {
 
 	uint8_t mRollingFriction = 0;
 	uint8_t mSpinningFriction = 0;
-	uint8_t mAnisotropicFrictionX = 0;
-	uint8_t mAnisotropicFrictionY = 0;
-	uint8_t mAnisotropicFrictionZ = 0;
+	uint8_t mAnisotropicFrictionX = UINT8_MAX;
+	uint8_t mAnisotropicFrictionY = UINT8_MAX;
+	uint8_t mAnisotropicFrictionZ = UINT8_MAX;
 };
 
 constexpr float FRICTION_MAX = 4.0f;
@@ -50,11 +50,11 @@ inline uint8_t ConvertFrictionToU8(float value) {
 	return uint8_t(value * UINT8_MAX / FRICTION_MAX);
 }
 
-inline float ConvertRestitutionFromU8(uint8_t value) {
+inline float ConvertZeroOneFromU8(uint8_t value) {
 	return float(value) / UINT8_MAX;
 }
 
-inline uint8_t ConvertRestitutionToU8(float value) {
+inline uint8_t ConvertZeroOneToU8(float value) {
 	JPH_ASSERT(value >= 0.0f && value <= 1.0f);
 	return uint8_t(value * UINT8_MAX);
 }
@@ -167,18 +167,18 @@ public:
 	}
 
 	inline float GetRollingFriction() const {
-		return ConvertFrictionFromU16(mFrictionRestitution.mRollingFriction);
+		return ConvertFrictionFromU8(mFrictionRestitution.mRollingFriction);
 	}
 
 	inline float GetSpinningFriction() const {
-		return ConvertFrictionFromU16(mFrictionRestitution.mSpinningFriction);
+		return ConvertFrictionFromU8(mFrictionRestitution.mSpinningFriction);
 	}
 
 	inline RVec3 GetAnisotropicFriction() const {
 		return {
-			ConvertFrictionFromU16(mFrictionRestitution.mAnisotropicFrictionX),
-			ConvertFrictionFromU16(mFrictionRestitution.mAnisotropicFrictionY),
-			ConvertFrictionFromU16(mFrictionRestitution.mAnisotropicFrictionZ),
+			ConvertZeroOneFromU8(mFrictionRestitution.mAnisotropicFrictionX),
+			ConvertZeroOneFromU8(mFrictionRestitution.mAnisotropicFrictionY),
+			ConvertZeroOneFromU8(mFrictionRestitution.mAnisotropicFrictionZ),
 		};
 	}
 
@@ -195,18 +195,18 @@ public:
 	}
 
 	void SetAnisotropicFriction(RVec3Arg inAnisotropicFriction) {
-		mFrictionRestitution.mAnisotropicFrictionX = ConvertFrictionToU8(inAnisotropicFriction.GetX());
-		mFrictionRestitution.mAnisotropicFrictionY = ConvertFrictionToU8(inAnisotropicFriction.GetY());
-		mFrictionRestitution.mAnisotropicFrictionZ = ConvertFrictionToU8(inAnisotropicFriction.GetZ());
+		mFrictionRestitution.mAnisotropicFrictionX = ConvertZeroOneToU8(inAnisotropicFriction.GetX());
+		mFrictionRestitution.mAnisotropicFrictionY = ConvertZeroOneToU8(inAnisotropicFriction.GetY());
+		mFrictionRestitution.mAnisotropicFrictionZ = ConvertZeroOneToU8(inAnisotropicFriction.GetZ());
 	}
 
 	/// Restitution (dimensionless number, usually between 0 and 1, 0 = completely inelastic collision response, 1 = completely elastic collision response). Note that bodies can have negative restitution but the combined restitution (see PhysicsSystem::SetCombineRestitution) should never go below zero.
 	inline float GetRestitution() const {
-		return ConvertRestitutionFromU8(mFrictionRestitution.mRestitution);
+		return ConvertZeroOneFromU8(mFrictionRestitution.mRestitution);
 	}
 
 	void SetRestitution(float inRestitution) {
-		mFrictionRestitution.mRestitution = ConvertRestitutionToU8(inRestitution);
+		mFrictionRestitution.mRestitution = ConvertZeroOneToU8(inRestitution);
 	}
 
 	void					AddTemporaryVelocity(Vec3Arg inLinearVelocity)					{ JPH_ASSERT(!IsStatic()); mMotionProperties->AddTemporaryVelocity(inLinearVelocity); }
@@ -355,6 +355,30 @@ public:
 	/// Update position using an Euler step (used during position integrate & constraint solving)
 	inline void				AddPositionStep(Vec3Arg inLinearVelocityTimesDeltaTime)			{ JPH_ASSERT(IsRigidBody()); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite)); mPosition += mMotionProperties->LockTranslation(inLinearVelocityTimesDeltaTime); JPH_ASSERT(!mPosition.IsNaN()); }
 	inline void				SubPositionStep(Vec3Arg inLinearVelocityTimesDeltaTime) 		{ JPH_ASSERT(IsRigidBody()); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite)); mPosition -= mMotionProperties->LockTranslation(inLinearVelocityTimesDeltaTime); JPH_ASSERT(!mPosition.IsNaN()); }
+
+	inline void AddForcedPositionStep(Vec3Arg inLinearVelocityTimesDeltaTime) {
+		JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite));
+		// only apply to axii that are restricted by linear factor. others are applied by linear velocity directly.
+		JPH_ASSERT(mMotionProperties);
+		mPosition += inLinearVelocityTimesDeltaTime * (Vec3(1, 1, 1) - mMotionProperties->GetLinearAllowedDOFs());
+		JPH_ASSERT(!mPosition.IsNaN());
+	}
+
+	inline void AddForcedRotationStep(Vec3Arg inAngularVelocityTimesDeltaTime) {
+		JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite));
+		// only apply to axii that are restricted by angular factor. others are applied by angular velocity directly.
+		JPH_ASSERT(mMotionProperties);
+		inAngularVelocityTimesDeltaTime = inAngularVelocityTimesDeltaTime * (Vec3(1, 1, 1) - mMotionProperties->GetAngularAllowedDOFs());
+		float len = inAngularVelocityTimesDeltaTime.Length();
+		if (len > 1.0e-6f) {
+			mRotation = (Quat::sRotation(inAngularVelocityTimesDeltaTime / len, len) * mRotation).Normalized();
+			JPH_ASSERT(!mRotation.IsNaN());
+		}
+	}
+
+	inline void ClearTemporaryVelocities() {
+		mMotionProperties->ClearTemporaryVelocities();
+	}
 
 	/// Update rotation using an Euler step (using during position integrate & constraint solving)
 	inline void				AddRotationStep(Vec3Arg inAngularVelocityTimesDeltaTime);

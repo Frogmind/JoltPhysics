@@ -47,6 +47,7 @@ inline bool Body::sFindCollidingPairsCanCollide(const Body &inBody1, const Body 
 	// One of these conditions must be true
 	// - One of the bodies must be dynamic to collide
 	// - A sensor can collide with non-dynamic bodies
+	// - Hypehype requirement: Sensor can collide with any other body type
 
 	/*
 	if ((!inBody1.IsDynamic() && !inBody2.IsDynamic())

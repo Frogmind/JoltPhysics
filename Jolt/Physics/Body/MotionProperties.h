@@ -47,6 +47,22 @@ public:
 	/// Get the allowed degrees of freedom that this body has (this can be changed by calling SetMassProperties)
 	inline EAllowedDOFs		GetAllowedDOFs() const											{ return mAllowedDOFs; }
 
+	inline Vec3 GetLinearAllowedDOFs() const {
+		return {
+			bool(mAllowedDOFs & EAllowedDOFs::TranslationX) ? 1.0f : 0.0f,
+			bool(mAllowedDOFs & EAllowedDOFs::TranslationY) ? 1.0f : 0.0f,
+			bool(mAllowedDOFs & EAllowedDOFs::TranslationZ) ? 1.0f : 0.0f,
+		};
+	}
+
+	inline Vec3 GetAngularAllowedDOFs() const {
+		return {
+			bool(mAllowedDOFs & EAllowedDOFs::RotationX) ? 1.0f : 0.0f,
+			bool(mAllowedDOFs & EAllowedDOFs::RotationY) ? 1.0f : 0.0f,
+			bool(mAllowedDOFs & EAllowedDOFs::RotationZ) ? 1.0f : 0.0f,
+		};
+	}
+
 	/// If this body can go to sleep.
 	inline bool				GetAllowSleeping() const										{ return mAllowSleeping; }
 
@@ -54,19 +70,19 @@ public:
 	inline Vec3				GetLinearVelocity() const										{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::Read)); return mLinearVelocity; }
 
 	/// Set world space linear velocity of the center of mass
-	void					SetLinearVelocity(Vec3Arg inLinearVelocity)						{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); JPH_ASSERT(inLinearVelocity.Length() <= mMaxLinearVelocity); mLinearVelocity = inLinearVelocity; }
+	void					SetLinearVelocity(Vec3Arg inLinearVelocity)						{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); JPH_ASSERT(inLinearVelocity.Length() <= mMaxLinearVelocity); mLinearVelocity = LockTranslation(inLinearVelocity); }
 
 	/// Set world space linear velocity of the center of mass, will make sure the value is clamped against the maximum linear velocity
-	void					SetLinearVelocityClamped(Vec3Arg inLinearVelocity)				{ mLinearVelocity = inLinearVelocity; ClampLinearVelocity(); }
+	void					SetLinearVelocityClamped(Vec3Arg inLinearVelocity)				{ mLinearVelocity = LockTranslation(inLinearVelocity); ClampLinearVelocity(); }
 
 	/// Get world space angular velocity of the center of mass
 	inline Vec3				GetAngularVelocity() const										{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::Read)); return mAngularVelocity; }
 
 	/// Set world space angular velocity of the center of mass
-	void					SetAngularVelocity(Vec3Arg inAngularVelocity)					{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); JPH_ASSERT(inAngularVelocity.Length() <= mMaxAngularVelocity); mAngularVelocity = inAngularVelocity; }
+	void					SetAngularVelocity(Vec3Arg inAngularVelocity)					{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); JPH_ASSERT(inAngularVelocity.Length() <= mMaxAngularVelocity); mAngularVelocity = inAngularVelocity * GetAngularAllowedDOFs(); }
 
 	/// Set world space angular velocity of the center of mass, will make sure the value is clamped against the maximum angular velocity
-	void					SetAngularVelocityClamped(Vec3Arg inAngularVelocity)			{ mAngularVelocity = inAngularVelocity; ClampAngularVelocity(); }
+	void					SetAngularVelocityClamped(Vec3Arg inAngularVelocity)			{ mAngularVelocity = inAngularVelocity * GetAngularAllowedDOFs(); ClampAngularVelocity(); }
 
 	/// Set velocity of body such that it will be rotate/translate by inDeltaPosition/Rotation in inDeltaTime seconds.
 	inline void				MoveKinematic(Vec3Arg inDeltaPosition, QuatArg inDeltaRotation, float inDeltaTime);
@@ -165,7 +181,7 @@ public:
 	JPH_INLINE void			ResetTorque()													{ mTorque = Float3(0, 0, 0); }
 
 	/// Takes a translation vector inV and returns a vector where the components that are not allowed by mAllowedDOFs are set to 0
-	JPH_INLINE Vec3			LockTranslation(Vec3Arg inV)
+	JPH_INLINE Vec3 LockTranslation(Vec3Arg inV) const
 	{
 		uint32 allowed_dofs = uint32(mAllowedDOFs);
 		UVec4 allowed_dofs_mask = UVec4(allowed_dofs << 31, allowed_dofs << 30, allowed_dofs << 29, 0).ArithmeticShiftRight<31>();
