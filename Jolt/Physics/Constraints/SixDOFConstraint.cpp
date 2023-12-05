@@ -180,6 +180,12 @@ void SixDOFConstraint::SetTranslationLimits(Vec3Arg inLimitMin, Vec3Arg inLimitM
 	mLimitMax[EAxis::TranslationZ] = inLimitMax.GetZ();
 }
 
+void SixDOFConstraint::SetTranslationLimitsY(float inLimitMin, float inLimitMax)
+{
+	mLimitMin[EAxis::TranslationY] = inLimitMin;
+	mLimitMax[EAxis::TranslationY] = inLimitMax;
+}
+
 void SixDOFConstraint::SetRotationLimits(Vec3Arg inLimitMin, Vec3Arg inLimitMax)
 {
 	mLimitMin[EAxis::RotationX] = inLimitMin.GetX();
@@ -191,6 +197,17 @@ void SixDOFConstraint::SetRotationLimits(Vec3Arg inLimitMin, Vec3Arg inLimitMax)
 
 	UpdateRotationLimits();
 }
+
+void SixDOFConstraint::SetRotationLimitsYMin(float yMin) {
+	mLimitMin[EAxis::RotationY] = yMin;
+	UpdateRotationLimits();
+}
+
+void SixDOFConstraint::SetRotationLimitsYMax(float yMax) {
+	mLimitMax[EAxis::RotationY] = yMax;
+	UpdateRotationLimits();
+}
+
 
 void SixDOFConstraint::SetMaxFriction(EAxis inAxis, float inFriction)
 {

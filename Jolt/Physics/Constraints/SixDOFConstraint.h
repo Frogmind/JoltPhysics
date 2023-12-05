@@ -125,9 +125,12 @@ public:
 
 	/// Update the translation limits for this constraint, note that this won't change if axis are free or not.
 	void						SetTranslationLimits(Vec3Arg inLimitMin, Vec3Arg inLimitMax);
+	void						SetTranslationLimitsY(float inLimitMin, float inLimitMax);
 
 	/// Update the rotational limits for this constraint, note that this won't change if axis are free or not.
 	void						SetRotationLimits(Vec3Arg inLimitMin, Vec3Arg inLimitMax);
+	void						SetRotationLimitsYMin(float yMin);
+	void						SetRotationLimitsYMax(float yMin);
 
 	/// Get constraint Limits
 	float						GetLimitsMin(EAxis inAxis) const							{ return mLimitMin[inAxis]; }
@@ -164,6 +167,10 @@ public:
 	/// Set the target angular velocity in body 2 constraint space (!)
 	void						SetTargetAngularVelocityCS(Vec3Arg inAngularVelocity)		{ mTargetAngularVelocity = inAngularVelocity; }
 	Vec3		 				GetTargetAngularVelocityCS() const							{ return mTargetAngularVelocity; }
+
+	void						SetTargetAngularVelocityX_CS(float inAngularVelocity)		{ mTargetAngularVelocity.SetX(inAngularVelocity); }
+	void						SetTargetAngularVelocityY_CS(float inAngularVelocity)		{ mTargetAngularVelocity.SetY(inAngularVelocity); }
+	void						SetTargetAngularVelocityZ_CS(float inAngularVelocity)		{ mTargetAngularVelocity.SetZ(inAngularVelocity); }
 
 	/// Set the target position in body 1 constraint space
 	Vec3		 				GetTargetPositionCS() const									{ return mTargetPosition; }
