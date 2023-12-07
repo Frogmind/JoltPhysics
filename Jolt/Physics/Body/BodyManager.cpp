@@ -221,7 +221,7 @@ Body *BodyManager::AllocateBody(const BodyCreationSettings &inBodyCreationSettin
 		JPH_IF_ENABLE_ASSERTS(mp->mCachedBodyType = body->mBodyType;)
 		JPH_IF_ENABLE_ASSERTS(mp->mCachedMotionType = body->mMotionType;)
 
-		if (body->mMotionType == EMotionType::Static)
+		if (body->mMotionType == EMotionType::Static || inBodyCreationSettings.mAllowedDOFs == EAllowedDOFs::None)
 		{
 			mp->SetMassPropertiesForStatic();
 		}
