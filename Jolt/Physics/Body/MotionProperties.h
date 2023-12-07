@@ -47,7 +47,7 @@ public:
 	/// Get the allowed degrees of freedom that this body has (this can be changed by calling SetMassProperties)
 	inline EAllowedDOFs		GetAllowedDOFs() const											{ return mAllowedDOFs; }
 
-	inline Vec3 GetLinearAllowedDOFs() const {
+	inline Vec3 GetLinearAllowedDOF() const {
 		return {
 			bool(mAllowedDOFs & EAllowedDOFs::TranslationX) ? 1.0f : 0.0f,
 			bool(mAllowedDOFs & EAllowedDOFs::TranslationY) ? 1.0f : 0.0f,
@@ -55,12 +55,16 @@ public:
 		};
 	}
 
-	inline Vec3 GetAngularAllowedDOFs() const {
+	inline Vec3 GetAngularAllowedDOF() const {
 		return {
 			bool(mAllowedDOFs & EAllowedDOFs::RotationX) ? 1.0f : 0.0f,
 			bool(mAllowedDOFs & EAllowedDOFs::RotationY) ? 1.0f : 0.0f,
 			bool(mAllowedDOFs & EAllowedDOFs::RotationZ) ? 1.0f : 0.0f,
 		};
+	}
+
+	inline bool AreAllAngularDOFLocked() const {
+		return (mAllowedDOFs & (EAllowedDOFs::RotationX | EAllowedDOFs::RotationY | EAllowedDOFs::RotationZ)) == EAllowedDOFs::None;
 	}
 
 	/// If this body can go to sleep.
@@ -79,10 +83,10 @@ public:
 	inline Vec3				GetAngularVelocity() const										{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::Read)); return mAngularVelocity; }
 
 	/// Set world space angular velocity of the center of mass
-	void					SetAngularVelocity(Vec3Arg inAngularVelocity)					{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); JPH_ASSERT(inAngularVelocity.Length() <= mMaxAngularVelocity); mAngularVelocity = inAngularVelocity * GetAngularAllowedDOFs(); }
+	void					SetAngularVelocity(Vec3Arg inAngularVelocity)					{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); JPH_ASSERT(inAngularVelocity.Length() <= mMaxAngularVelocity); mAngularVelocity = inAngularVelocity * GetAngularAllowedDOF(); }
 
 	/// Set world space angular velocity of the center of mass, will make sure the value is clamped against the maximum angular velocity
-	void					SetAngularVelocityClamped(Vec3Arg inAngularVelocity)			{ mAngularVelocity = inAngularVelocity * GetAngularAllowedDOFs(); ClampAngularVelocity(); }
+	void					SetAngularVelocityClamped(Vec3Arg inAngularVelocity)			{ mAngularVelocity = inAngularVelocity * GetAngularAllowedDOF(); ClampAngularVelocity(); }
 
 	/// Set velocity of body such that it will be rotate/translate by inDeltaPosition/Rotation in inDeltaTime seconds.
 	inline void				MoveKinematic(Vec3Arg inDeltaPosition, QuatArg inDeltaRotation, float inDeltaTime);
