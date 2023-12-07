@@ -356,26 +356,6 @@ public:
 	inline void				AddPositionStep(Vec3Arg inLinearVelocityTimesDeltaTime)			{ JPH_ASSERT(IsRigidBody()); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite)); mPosition += mMotionProperties->LockTranslation(inLinearVelocityTimesDeltaTime); JPH_ASSERT(!mPosition.IsNaN()); }
 	inline void				SubPositionStep(Vec3Arg inLinearVelocityTimesDeltaTime) 		{ JPH_ASSERT(IsRigidBody()); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite)); mPosition -= mMotionProperties->LockTranslation(inLinearVelocityTimesDeltaTime); JPH_ASSERT(!mPosition.IsNaN()); }
 
-	inline void AddForcedPositionStep(Vec3Arg inLinearVelocityTimesDeltaTime) {
-		JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite));
-		// only apply to axii that are restricted by linear factor. others are applied by linear velocity directly.
-		JPH_ASSERT(mMotionProperties);
-		mPosition += inLinearVelocityTimesDeltaTime * (Vec3(1, 1, 1) - mMotionProperties->GetLinearAllowedDOFs());
-		JPH_ASSERT(!mPosition.IsNaN());
-	}
-
-	inline void AddForcedRotationStep(Vec3Arg inAngularVelocityTimesDeltaTime) {
-		JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite));
-		// only apply to axii that are restricted by angular factor. others are applied by angular velocity directly.
-		JPH_ASSERT(mMotionProperties);
-		inAngularVelocityTimesDeltaTime = inAngularVelocityTimesDeltaTime * (Vec3(1, 1, 1) - mMotionProperties->GetAngularAllowedDOFs());
-		float len = inAngularVelocityTimesDeltaTime.Length();
-		if (len > 1.0e-6f) {
-			mRotation = (Quat::sRotation(inAngularVelocityTimesDeltaTime / len, len) * mRotation).Normalized();
-			JPH_ASSERT(!mRotation.IsNaN());
-		}
-	}
-
 	inline void ClearTemporaryVelocities() {
 		mMotionProperties->ClearTemporaryVelocities();
 	}
