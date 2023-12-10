@@ -744,6 +744,9 @@ Mat44 Mat44::Adjointed3x3() const
 Mat44 Mat44::Inversed3x3() const
 {
 	float det = GetDeterminant3x3();
+	if (det == 0.0f) {
+		return sIdentity();
+	}
 
 	return Mat44(
 		(Vec4(JPH_EL(1, 1), JPH_EL(1, 2), JPH_EL(1, 0), 0) * Vec4(JPH_EL(2, 2), JPH_EL(2, 0), JPH_EL(2, 1), 0)
