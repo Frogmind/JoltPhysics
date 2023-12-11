@@ -74,19 +74,33 @@ public:
 	inline Vec3				GetLinearVelocity() const										{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::Read)); return mLinearVelocity; }
 
 	/// Set world space linear velocity of the center of mass
-	void					SetLinearVelocity(Vec3Arg inLinearVelocity)						{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); JPH_ASSERT(inLinearVelocity.Length() <= mMaxLinearVelocity); mLinearVelocity = LockTranslation(inLinearVelocity); }
+	void					SetLinearVelocity(Vec3Arg inLinearVelocity)						{
+		JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite));
+		JPH_ASSERT(inLinearVelocity.Length() <= mMaxLinearVelocity);
+		mLinearVelocity = LockTranslation(inLinearVelocity);
+	}
 
 	/// Set world space linear velocity of the center of mass, will make sure the value is clamped against the maximum linear velocity
-	void					SetLinearVelocityClamped(Vec3Arg inLinearVelocity)				{ mLinearVelocity = LockTranslation(inLinearVelocity); ClampLinearVelocity(); }
+	void					SetLinearVelocityClamped(Vec3Arg inLinearVelocity)				{
+		mLinearVelocity = LockTranslation(inLinearVelocity);
+		ClampLinearVelocity();
+	}
 
 	/// Get world space angular velocity of the center of mass
 	inline Vec3				GetAngularVelocity() const										{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::Read)); return mAngularVelocity; }
 
 	/// Set world space angular velocity of the center of mass
-	void					SetAngularVelocity(Vec3Arg inAngularVelocity)					{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); JPH_ASSERT(inAngularVelocity.Length() <= mMaxAngularVelocity); mAngularVelocity = inAngularVelocity * GetAngularAllowedDOF(); }
+	void					SetAngularVelocity(Vec3Arg inAngularVelocity)					{
+		JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite));
+		JPH_ASSERT(inAngularVelocity.Length() <= mMaxAngularVelocity);
+		mAngularVelocity = inAngularVelocity * GetAngularAllowedDOF();
+	}
 
 	/// Set world space angular velocity of the center of mass, will make sure the value is clamped against the maximum angular velocity
-	void					SetAngularVelocityClamped(Vec3Arg inAngularVelocity)			{ mAngularVelocity = inAngularVelocity * GetAngularAllowedDOF(); ClampAngularVelocity(); }
+	void					SetAngularVelocityClamped(Vec3Arg inAngularVelocity)			{
+		mAngularVelocity = inAngularVelocity * GetAngularAllowedDOF();
+		ClampAngularVelocity();
+	}
 
 	/// Set velocity of body such that it will be rotate/translate by inDeltaPosition/Rotation in inDeltaTime seconds.
 	inline void				MoveKinematic(Vec3Arg inDeltaPosition, QuatArg inDeltaRotation, float inDeltaTime);
