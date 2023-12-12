@@ -164,9 +164,6 @@ public:
 		auto body2_ang_vel = ioBody2.GetAngularVelocity() + ioBody2.GetTemporaryAngularVelocity();
 
 		Vec3 lambda = mEffectiveMass * (body1_vel - mR1.Cross(body1_ang_vel) - body2_vel + mR2.Cross(body2_ang_vel));
-		if (lambda.LengthSq() > mMaxForce * mMaxForce) {
-			lambda = lambda.Normalized() * mMaxForce;
-		}
 
 		mTotalLambda += lambda; // Store accumulated lambda
 		return ApplyVelocityStep(ioBody1, ioBody2, lambda);
@@ -206,12 +203,12 @@ public:
 			if (ioBody1.IsDynamic())
 			{
 				ioBody1.SubPositionStep(ioBody1.GetMotionProperties()->GetInverseMass() * lambda);
-				ioBody1.SubRotationStep(mInvI1_R1X * lambda);
+				ioBody1.SubRotationStep(mInvI1_R1X * lambda * ioBody1.GetMotionProperties()->GetAngularAllowedDOF());
 			}
 			if (ioBody2.IsDynamic())
 			{
 				ioBody2.AddPositionStep(ioBody2.GetMotionProperties()->GetInverseMass() * lambda);
-				ioBody2.AddRotationStep(mInvI2_R2X * lambda);
+				ioBody2.AddRotationStep(mInvI2_R2X * lambda * ioBody2.GetMotionProperties()->GetAngularAllowedDOF());
 			}
 
 			return true;
@@ -238,21 +235,6 @@ public:
 		inStream.Read(mTotalLambda);
 	}
 
-	float GetMaxForce() const
-	{
-		return mMaxForce;
-	}
-
-	void SetMaxForce(float inMaxForce)
-	{
-		mMaxForce = inMaxForce;
-	}
-
-	void SetDamping(float inDamping)
-	{
-		mDamping = inDamping;
-	}
-
 private:
 	Vec3						mR1;
 	Vec3						mR2;
@@ -260,8 +242,6 @@ private:
 	Mat44						mInvI2_R2X;
 	Mat44						mEffectiveMass;
 	Vec3						mTotalLambda { Vec3::sZero() };
-	float						mMaxForce = 1e15f;
-	float 						mDamping = 1.0f;
 };
 
 JPH_NAMESPACE_END

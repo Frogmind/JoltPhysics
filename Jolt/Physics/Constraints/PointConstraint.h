@@ -81,18 +81,6 @@ public:
 	inline Vec3 GetPivotInA_LocalSpace() const { return mLocalSpacePosition1; }
 	inline Vec3 GetPivotInB_LocalSpace() const { return mLocalSpacePosition2; }
 
-	inline float GetMaxForce() {
-		return mPointConstraintPart.GetMaxForce();
-	}
-
-	inline void SetMaxForce(float inMaxForce) {
-		mPointConstraintPart.SetMaxForce(inMaxForce);
-	}
-
-	inline void SetDamping(float inDamping) {
-		mPointConstraintPart.SetDamping(inDamping);
-	}
-
 private:
 	// Internal helper function to calculate the values below
 	void						CalculateConstraintProperties();

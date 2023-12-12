@@ -83,7 +83,7 @@ void MotionProperties::ApplyForceTorqueAndDragInternal(QuatArg inBodyRotation, V
 	mLinearVelocity = LockTranslation(mLinearVelocity + inDeltaTime * (mGravityFactor * inGravity + mInvMass * GetAccumulatedForce()));
 
 	// Update angular velocity
-	mAngularVelocity += inDeltaTime * MultiplyWorldSpaceInverseInertiaByVector(inBodyRotation, GetAccumulatedTorque());
+	mAngularVelocity += inDeltaTime * MultiplyWorldSpaceInverseInertiaByVector(inBodyRotation, GetAccumulatedTorque()) * GetAngularAllowedDOF();
 
 	// Linear damping: dv/dt = -c * v
 	// Solution: v(t) = v(0) * e^(-c * t) or v2 = v1 * e^(-c * dt)
