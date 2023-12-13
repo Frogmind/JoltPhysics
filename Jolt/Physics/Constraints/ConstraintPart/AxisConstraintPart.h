@@ -66,12 +66,12 @@ class AxisConstraintPart
 			if constexpr (Type1 == EMotionType::Dynamic)
 			{
 				ioMotionProperties1->SubLinearVelocityStep((inLambda * inInvMass1) * inWorldSpaceAxis);
-				ioMotionProperties1->SubAngularVelocityStep(inLambda * Vec3::sLoadFloat3Unsafe(mInvI1_R1PlusUxAxis) * ioMotionProperties1->GetAngularAllowedDOF());
+				ioMotionProperties1->SubAngularVelocityStep(inLambda * Vec3::sLoadFloat3Unsafe(mInvI1_R1PlusUxAxis));
 			}
 			if constexpr (Type2 == EMotionType::Dynamic)
 			{
 				ioMotionProperties2->AddLinearVelocityStep((inLambda * inInvMass2) * inWorldSpaceAxis);
-				ioMotionProperties2->AddAngularVelocityStep(inLambda * Vec3::sLoadFloat3Unsafe(mInvI2_R2xAxis) * ioMotionProperties2->GetAngularAllowedDOF());
+				ioMotionProperties2->AddAngularVelocityStep(inLambda * Vec3::sLoadFloat3Unsafe(mInvI2_R2xAxis));
 			}
 			return true;
 		}
@@ -617,12 +617,12 @@ public:
 			if (ioBody1.IsDynamic())
 			{
 				ioBody1.SubPositionStep((lambda * ioBody1.GetMotionProperties()->GetInverseMass()) * inWorldSpaceAxis);
-				ioBody1.SubRotationStep(lambda * Vec3::sLoadFloat3Unsafe(mInvI1_R1PlusUxAxis) * ioBody1.GetMotionProperties()->GetAngularAllowedDOF());
+				ioBody1.SubRotationStep(lambda * Vec3::sLoadFloat3Unsafe(mInvI1_R1PlusUxAxis));
 			}
 			if (ioBody2.IsDynamic())
 			{
 				ioBody2.AddPositionStep((lambda * ioBody2.GetMotionProperties()->GetInverseMass()) * inWorldSpaceAxis);
-				ioBody2.AddRotationStep(lambda * Vec3::sLoadFloat3Unsafe(mInvI2_R2xAxis) * ioBody2.GetMotionProperties()->GetAngularAllowedDOF());
+				ioBody2.AddRotationStep(lambda * Vec3::sLoadFloat3Unsafe(mInvI2_R2xAxis));
 			}
 			return true;
 		}
@@ -668,12 +668,12 @@ public:
 			if (ioBody1.IsDynamic())
 			{
 				ioBody1.SubPositionStep((lambda * inInvMass1) * inWorldSpaceAxis);
-				ioBody1.SubRotationStep(lambda * Vec3::sLoadFloat3Unsafe(mInvI1_R1PlusUxAxis) * ioBody1.GetMotionProperties()->GetAngularAllowedDOF());
+				ioBody1.SubRotationStep(lambda * Vec3::sLoadFloat3Unsafe(mInvI1_R1PlusUxAxis));
 			}
 			if (ioBody2.IsDynamic())
 			{
 				ioBody2.AddPositionStep((lambda * inInvMass2) * inWorldSpaceAxis);
-				ioBody2.AddRotationStep(lambda * Vec3::sLoadFloat3Unsafe(mInvI2_R2xAxis) * ioBody2.GetMotionProperties()->GetAngularAllowedDOF());
+				ioBody2.AddRotationStep(lambda * Vec3::sLoadFloat3Unsafe(mInvI2_R2xAxis));
 			}
 			return true;
 		}

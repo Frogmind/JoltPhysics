@@ -94,7 +94,10 @@ inline bool Body::sFindCollidingPairsCanCollide(const Body &inBody1, const Body 
 void Body::AddRotationStep(Vec3Arg inAngularVelocityTimesDeltaTime)
 {
 	JPH_ASSERT(IsRigidBody());
+	JPH_ASSERT(IsDynamic());
 	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite));
+
+	Vec3 angularVelocityTimesDeltaTime = inAngularVelocityTimesDeltaTime * mMotionProperties->GetAngularAllowedDOF();
 
 	// This used to use the equation: d/dt R(t) = 1/2 * w(t) * R(t) so that R(t + dt) = R(t) + 1/2 * w(t) * R(t) * dt
 	// See: Appendix B of An Introduction to Physically Based Modeling: Rigid Body Simulation II-Nonpenetration Constraints
@@ -102,10 +105,10 @@ void Body::AddRotationStep(Vec3Arg inAngularVelocityTimesDeltaTime)
 	// But this is a first order approximation and does not work well for kinematic ragdolls that are driven to a new
 	// pose if the poses differ enough. So now we split w(t) * dt into an axis and angle part and create a quaternion with it.
 	// Note that the resulting quaternion is normalized since otherwise numerical drift will eventually make the rotation non-normalized.
-	float len = inAngularVelocityTimesDeltaTime.Length();
+	float len = angularVelocityTimesDeltaTime.Length();
 	if (len > 1.0e-6f)
 	{
-		mRotation = (Quat::sRotation(inAngularVelocityTimesDeltaTime / len, len) * mRotation).Normalized();
+		mRotation = (Quat::sRotation(angularVelocityTimesDeltaTime / len, len) * mRotation).Normalized();
 		JPH_ASSERT(!mRotation.IsNaN());
 	}
 }
@@ -113,13 +116,16 @@ void Body::AddRotationStep(Vec3Arg inAngularVelocityTimesDeltaTime)
 void Body::SubRotationStep(Vec3Arg inAngularVelocityTimesDeltaTime)
 {
 	JPH_ASSERT(IsRigidBody());
+	JPH_ASSERT(IsDynamic());
 	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite));
 
+	Vec3 angularVelocityTimesDeltaTime = inAngularVelocityTimesDeltaTime * mMotionProperties->GetAngularAllowedDOF();
+
 	// See comment at Body::AddRotationStep
-	float len = inAngularVelocityTimesDeltaTime.Length();
+	float len = angularVelocityTimesDeltaTime.Length();
 	if (len > 1.0e-6f)
 	{
-		mRotation = (Quat::sRotation(inAngularVelocityTimesDeltaTime / len, -len) * mRotation).Normalized();
+		mRotation = (Quat::sRotation(angularVelocityTimesDeltaTime / len, -len) * mRotation).Normalized();
 		JPH_ASSERT(!mRotation.IsNaN());
 	}
 }

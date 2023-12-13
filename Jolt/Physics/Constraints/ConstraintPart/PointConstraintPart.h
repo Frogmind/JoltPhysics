@@ -203,12 +203,12 @@ public:
 			if (ioBody1.IsDynamic())
 			{
 				ioBody1.SubPositionStep(ioBody1.GetMotionProperties()->GetInverseMass() * lambda);
-				ioBody1.SubRotationStep(mInvI1_R1X * lambda * ioBody1.GetMotionProperties()->GetAngularAllowedDOF());
+				ioBody1.SubRotationStep(mInvI1_R1X * lambda);
 			}
 			if (ioBody2.IsDynamic())
 			{
 				ioBody2.AddPositionStep(ioBody2.GetMotionProperties()->GetInverseMass() * lambda);
-				ioBody2.AddRotationStep(mInvI2_R2X * lambda * ioBody2.GetMotionProperties()->GetAngularAllowedDOF());
+				ioBody2.AddRotationStep(mInvI2_R2X * lambda);
 			}
 
 			return true;
