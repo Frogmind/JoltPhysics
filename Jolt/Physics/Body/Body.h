@@ -41,15 +41,6 @@ inline uint16_t ConvertFrictionToU16(float value) {
 	return uint16_t(value * UINT16_MAX / FRICTION_MAX);
 }
 
-inline float ConvertFrictionFromU8(uint8_t value) {
-	return value * FRICTION_MAX / UINT8_MAX;
-}
-
-inline uint8_t ConvertFrictionToU8(float value) {
-	JPH_ASSERT(value >= 0.0f && value <= FRICTION_MAX);
-	return uint8_t(value * UINT8_MAX / FRICTION_MAX);
-}
-
 inline float ConvertZeroOneFromU8(uint8_t value) {
 	return float(value) / UINT8_MAX;
 }
@@ -167,11 +158,11 @@ public:
 	}
 
 	inline float GetRollingFriction() const {
-		return ConvertFrictionFromU8(mFrictionRestitution.mRollingFriction);
+		return ConvertZeroOneFromU8(mFrictionRestitution.mRollingFriction);
 	}
 
 	inline float GetSpinningFriction() const {
-		return ConvertFrictionFromU8(mFrictionRestitution.mSpinningFriction);
+		return ConvertZeroOneFromU8(mFrictionRestitution.mSpinningFriction);
 	}
 
 	inline RVec3 GetAnisotropicFriction() const {
@@ -187,11 +178,11 @@ public:
 	}
 
 	void SetRollingFriction(float inRollingFriction) {
-		mFrictionRestitution.mRollingFriction = ConvertFrictionToU8(inRollingFriction);
+		mFrictionRestitution.mRollingFriction = ConvertZeroOneToU8(inRollingFriction);
 	}
 
 	void SetSpinningFriction(float inSpinningFriction) {
-		mFrictionRestitution.mSpinningFriction = ConvertFrictionToU8(inSpinningFriction);
+		mFrictionRestitution.mSpinningFriction = ConvertZeroOneToU8(inSpinningFriction);
 	}
 
 	void SetAnisotropicFriction(RVec3Arg inAnisotropicFriction) {
