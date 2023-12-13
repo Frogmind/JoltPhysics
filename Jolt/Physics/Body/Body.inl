@@ -94,7 +94,7 @@ inline bool Body::sFindCollidingPairsCanCollide(const Body &inBody1, const Body 
 void Body::AddRotationStep(Vec3Arg inAngularVelocityTimesDeltaTime)
 {
 	JPH_ASSERT(IsRigidBody());
-	JPH_ASSERT(IsDynamic());
+	JPH_ASSERT(mMotionProperties);
 	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite));
 
 	Vec3 angularVelocityTimesDeltaTime = inAngularVelocityTimesDeltaTime * mMotionProperties->GetAngularAllowedDOF();
@@ -116,7 +116,7 @@ void Body::AddRotationStep(Vec3Arg inAngularVelocityTimesDeltaTime)
 void Body::SubRotationStep(Vec3Arg inAngularVelocityTimesDeltaTime)
 {
 	JPH_ASSERT(IsRigidBody());
-	JPH_ASSERT(IsDynamic());
+	JPH_ASSERT(mMotionProperties);
 	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite));
 
 	Vec3 angularVelocityTimesDeltaTime = inAngularVelocityTimesDeltaTime * mMotionProperties->GetAngularAllowedDOF();
