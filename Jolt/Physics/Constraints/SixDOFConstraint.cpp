@@ -92,8 +92,8 @@ void SixDOFConstraint::UpdateRotationLimits()
 		}
 
 	// The swing twist constraint part requires symmetrical rotations around Y and Z
-	JPH_ASSERT(mLimitMin[EAxis::RotationY] == -mLimitMax[EAxis::RotationY]);
-	JPH_ASSERT(mLimitMin[EAxis::RotationZ] == -mLimitMax[EAxis::RotationZ]);
+	// JPH_ASSERT(mLimitMin[EAxis::RotationY] == -mLimitMax[EAxis::RotationY]);
+	// JPH_ASSERT(mLimitMin[EAxis::RotationZ] == -mLimitMax[EAxis::RotationZ]);
 
 	// Pass limits on to constraint part
 	mSwingTwistConstraintPart.SetLimits(mLimitMin[EAxis::RotationX], mLimitMax[EAxis::RotationX], mLimitMax[EAxis::RotationY], mLimitMax[EAxis::RotationZ]);
@@ -198,16 +198,13 @@ void SixDOFConstraint::SetRotationLimits(Vec3Arg inLimitMin, Vec3Arg inLimitMax)
 	UpdateRotationLimits();
 }
 
-void SixDOFConstraint::SetRotationLimitsYMin(float yMin) {
-	mLimitMin[EAxis::RotationY] = yMin;
+
+
+void SixDOFConstraint::SetRotationLimitsY(float rotationLimitsRadians) {
+	mLimitMin[EAxis::RotationY] = -std::abs(rotationLimitsRadians);
+	mLimitMax[EAxis::RotationY] = +std::abs(rotationLimitsRadians);
 	UpdateRotationLimits();
 }
-
-void SixDOFConstraint::SetRotationLimitsYMax(float yMax) {
-	mLimitMax[EAxis::RotationY] = yMax;
-	UpdateRotationLimits();
-}
-
 
 void SixDOFConstraint::SetMaxFriction(EAxis inAxis, float inFriction)
 {

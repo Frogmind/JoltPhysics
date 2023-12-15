@@ -129,8 +129,7 @@ public:
 
 	/// Update the rotational limits for this constraint, note that this won't change if axis are free or not.
 	void						SetRotationLimits(Vec3Arg inLimitMin, Vec3Arg inLimitMax);
-	void						SetRotationLimitsYMin(float yMin);
-	void						SetRotationLimitsYMax(float yMin);
+	void						SetRotationLimitsY(float rotationLimitsRadians);
 
 	/// Get constraint Limits
 	float						GetLimitsMin(EAxis inAxis) const							{ return mLimitMin[inAxis]; }
