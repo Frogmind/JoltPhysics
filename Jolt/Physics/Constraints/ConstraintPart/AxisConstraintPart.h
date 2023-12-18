@@ -399,7 +399,7 @@ public:
 		float jv;
 
 		// in friction, we ignore dynamic objects temporary velocities
-		if constexpr (UseCase == ConstraintUseCase::Friction) {
+		if constexpr (true || UseCase == ConstraintUseCase::Friction) {
 			JPH::Vec3 totalLinearVelocity{ JPH::Vec3::sZero() };
 			if constexpr (Type1 == EMotionType::Kinematic) {
 				totalLinearVelocity += ioMotionProperties1->GetLinearVelocity() + ioMotionProperties1->GetTemporaryVelocity();
