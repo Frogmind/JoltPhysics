@@ -60,11 +60,11 @@ include(CMakeDependentOption)
 cmake_dependent_option(USE_STATIC_MSVC_RUNTIME_LIBRARY "Use the static MSVC runtime library" ON "MSVC;NOT WINDOWS_STORE" OFF)
 
 # Determine which configurations exist
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	set(CMAKE_CONFIGURATION_TYPES "Debug;Release;Distribution")
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
-	set(CMAKE_CONFIGURATION_TYPES "Debug;Release;ReleaseASAN;ReleaseUBSAN;ReleaseCoverage;Distribution")
-endif()
+#if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+#	set(CMAKE_CONFIGURATION_TYPES "Debug;Release;Distribution")
+#elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+#	set(CMAKE_CONFIGURATION_TYPES "Debug;Release;ReleaseASAN;ReleaseUBSAN;ReleaseCoverage;Distribution")
+#endif()
 
 if (MSVC)
 	# Fill in the path to the asan libraries
@@ -74,9 +74,9 @@ if (MSVC)
 	set(CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE "x64")
 
 	# Set runtime library
-	if (USE_STATIC_MSVC_RUNTIME_LIBRARY)
-		set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-	endif()
+	#if (USE_STATIC_MSVC_RUNTIME_LIBRARY)
+		#set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	#endif()
 
 	# Set general compiler flags
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus /Gm- /MP /nologo /diagnostics:classic /FC /fp:except- /Zc:inline")
@@ -208,14 +208,14 @@ if (XCODE)
 endif()
 
 # Install Jolt library and includes
-install(TARGETS Jolt DESTINATION lib)
-foreach(SRC_FILE ${JOLT_PHYSICS_SRC_FILES})
-	string(REPLACE ${PHYSICS_REPO_ROOT} "" RELATIVE_SRC_FILE ${SRC_FILE})
-	get_filename_component(DESTINATION_PATH ${RELATIVE_SRC_FILE} DIRECTORY)
-	if (NOT RELATIVE_SRC_FILE MATCHES "\.cpp")
-		install(FILES ${SRC_FILE} DESTINATION include/${DESTINATION_PATH})
-	endif()
-endforeach()
+#install(TARGETS Jolt DESTINATION lib)
+#foreach(SRC_FILE ${JOLT_PHYSICS_SRC_FILES})
+#	string(REPLACE ${PHYSICS_REPO_ROOT} "" RELATIVE_SRC_FILE ${SRC_FILE})
+#	get_filename_component(DESTINATION_PATH ${RELATIVE_SRC_FILE} DIRECTORY)
+#	if (NOT RELATIVE_SRC_FILE MATCHES "\.cpp")
+#		install(FILES ${SRC_FILE} DESTINATION include/${DESTINATION_PATH})
+#	endif()
+#endforeach()
 
 # Check if we're the root CMakeLists.txt, if not we are included by another CMake file and we should disable everything except for the main library
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
