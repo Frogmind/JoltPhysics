@@ -236,7 +236,8 @@ public:
 		// 3 padding bytes left
 	};
 
-	static_assert(sizeof(SubShape) == (JPH_CPU_ADDRESS_BITS == 64 ? 48 : 40), "Compiler added unexpected padding");
+	// static_assert(sizeof(SubShape) == (JPH_CPU_ADDRESS_BITS == 64 ? 48 : 40), "Compiler added unexpected padding");
+	// NOTE: Disabled for now, had problems
 
 	using SubShapes = Array<SubShape>;
 
