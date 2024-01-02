@@ -89,7 +89,7 @@ void Body::AddRotationStep(Vec3Arg inAngularVelocityTimesDeltaTime)
 	JPH_ASSERT(mMotionProperties);
 	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite));
 
-	Vec3 angularVelocityTimesDeltaTime = inAngularVelocityTimesDeltaTime * mMotionProperties->GetAngularAllowedDOF();
+	Vec3 angularVelocityTimesDeltaTime = mMotionProperties->LockAngular(inAngularVelocityTimesDeltaTime);
 
 	// This used to use the equation: d/dt R(t) = 1/2 * w(t) * R(t) so that R(t + dt) = R(t) + 1/2 * w(t) * R(t) * dt
 	// See: Appendix B of An Introduction to Physically Based Modeling: Rigid Body Simulation II-Nonpenetration Constraints
@@ -111,7 +111,7 @@ void Body::SubRotationStep(Vec3Arg inAngularVelocityTimesDeltaTime)
 	JPH_ASSERT(mMotionProperties);
 	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite));
 
-	Vec3 angularVelocityTimesDeltaTime = inAngularVelocityTimesDeltaTime * mMotionProperties->GetAngularAllowedDOF();
+	Vec3 angularVelocityTimesDeltaTime = mMotionProperties->LockAngular(inAngularVelocityTimesDeltaTime);
 
 	// See comment at Body::AddRotationStep
 	float len = angularVelocityTimesDeltaTime.Length();
