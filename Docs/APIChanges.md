@@ -4,7 +4,16 @@ This document lists all breaking API changes by date and by release tag. Note th
 
 Changes that make some state saved through SaveBinaryState from a prior version of the library unreadable by the new version is marked as *SBS*. See 'Saving Shapes' in [Architecture and API documentation](https://jrouwe.github.io/JoltPhysics/) for further information.
 
-## Changes between v4.0.0 and v4.0.1
+## Changes between v4.0.2 and latest
+
+* 20240101 - Renamed SensorDetectsStatic to CollideKinematicVsNonDynamic and made it work for non-sensors. This means that kinematic bodies can now get collision callbacks when they collide with other static / kinematic objects. It can also affect the order in which bodies are passed in the ContactListener::OnContactValidate callback. (2d607c4161a65201d66558a2cc76d1265aea527e)
+* 20231220 - *SBS* - Added ability to enable gyroscopic forces on BodyCreationSettings. This breaks the binary serialization format for this class. (9d7748eaa91341adc17554f32bf991bfed04e47e)
+* 20231219 - *SBS* - Added a 'swing type' attribute to SixDOFConstraint and SwingTwistConstraint. This breaks the binary serialization format. (41016256e2cf1262ec05cff3cfa7645668ee0bf0)
+* 20231208 - Changed the meaning of Constraint::mNumVelocity/PositionStepsOverride. Before the number of steps would be the maximum of all constraints and the default value, now an overridden value of 0 means that the constraint uses the default value, otherwise it will use the value as specified. This means that if all constraints in an island have a lower value than the default, we will now use the lower value instead of the default. (0771808a03b850d16f1c64156f0aee827ca3706b)
+* 20231208 - *SBS* - Bodies can now also override the default number of solver iterations. This breaks the binary serialization format. (0771808a03b850d16f1c64156f0aee827ca3706b)
+* 20231203 - VehicleConstraint::CombineFunction got two additional parameters to identify which wheel is requesting friction. (8d80155f93d0d0c3ffe3dd46550650b9c830d304)
+
+## Changes between v4.0.0 and v4.0.2
 
 * No breaking changes.
 

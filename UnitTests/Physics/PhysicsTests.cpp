@@ -10,6 +10,7 @@
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
+#include <Jolt/Physics/Collision/Shape/StaticCompoundShape.h>
 #include <Jolt/Physics/Body/BodyLockMulti.h>
 #include <Jolt/Physics/Constraints/PointConstraint.h>
 #include <Jolt/Physics/StateRecorderImpl.h>
@@ -929,6 +930,48 @@ TEST_SUITE("PhysicsTests")
 		CHECK_APPROX_EQUAL(-sphere.GetLinearVelocity(), cVelocity);
 	}
 
+	TEST_CASE("TestPhysicsInsideSpeculativeContactDistanceSensor")
+	{
+		PhysicsTestContext c;
+		Body &floor = c.CreateFloor();
+		c.ZeroGravity();
+
+		LoggingContactListener contact_listener;
+		c.GetSystem()->SetContactListener(&contact_listener);
+
+		// Create a sphere sensor just inside the speculative contact distance
+		const float cSpeculativeContactDistance = c.GetSystem()->GetPhysicsSettings().mSpeculativeContactDistance;
+		const float cRadius = 1.0f;
+		const float cDistanceAboveFloor = 0.9f * cSpeculativeContactDistance;
+		const RVec3 cInitialPosSphere(5, cRadius + cDistanceAboveFloor, 0);
+
+		// Make it move 1 m per step down
+		const Vec3 cVelocity(0, -1.0f / c.GetDeltaTime(), 0);
+
+		Body &sphere = c.CreateSphere(cInitialPosSphere, cRadius, EMotionType::Dynamic, EMotionQuality::Discrete, Layers::MOVING);
+		sphere.SetIsSensor(true);
+		sphere.SetLinearVelocity(cVelocity);
+
+		// Simulate a step
+		c.SimulateSingleStep();
+
+		CHECK(contact_listener.GetEntryCount() == 0); // We're inside the speculative contact distance but we're a sensor so we shouldn't trigger any contacts
+
+		// Simulate a step
+		c.SimulateSingleStep();
+
+		// Check that we're now actually intersecting
+		CHECK(contact_listener.GetEntryCount() == 2); // 1 validates and 1 contact
+		CHECK(contact_listener.Contains(LoggingContactListener::EType::Validate, sphere.GetID(), floor.GetID()));
+		CHECK(contact_listener.Contains(LoggingContactListener::EType::Add, sphere.GetID(), floor.GetID()));
+		contact_listener.Clear();
+
+		// Sensor should not be affected by the floor
+		CHECK_APPROX_EQUAL(sphere.GetPosition(), cInitialPosSphere + 2.0f * c.GetDeltaTime() * cVelocity);
+		CHECK_APPROX_EQUAL(sphere.GetLinearVelocity(), cVelocity);
+		CHECK_APPROX_EQUAL(sphere.GetAngularVelocity(), Vec3::sZero());
+	}
+
 	TEST_CASE("TestPhysicsInsideSpeculativeContactDistanceMovingAway")
 	{
 		PhysicsTestContext c;
@@ -1479,6 +1522,44 @@ TEST_SUITE("PhysicsTests")
 		}
 	}
 
+	TEST_CASE("TestAllowedDOFsVsCollision")
+	{
+		PhysicsTestContext c;
+		Body &floor = c.CreateFloor();
+		floor.SetFriction(1.0f);
+
+		LoggingContactListener contact_listener;
+		c.GetSystem()->SetContactListener(&contact_listener);
+
+		// Create box that can only rotate around Y that intersects with the floor
+		RVec3 initial_position(0, 0.99f, 0);
+		BodyCreationSettings box_settings(new BoxShape(Vec3::sReplicate(1.0f)), initial_position, Quat::sIdentity(), EMotionType::Dynamic, Layers::MOVING);
+		box_settings.mAllowedDOFs = EAllowedDOFs::RotationY;
+		box_settings.mAngularDamping = 0.0f; // No damping to make the calculation for expected angular velocity simple
+		box_settings.mOverrideMassProperties = EOverrideMassProperties::CalculateInertia;
+		box_settings.mMassPropertiesOverride.mMass = 1.0f;
+		box_settings.mFriction = 1.0f; // High friction so that if the collision is processed, we'll slow down the rotation
+		Body *body = c.GetBodyInterface().CreateBody(box_settings);
+		c.GetBodyInterface().AddBody(body->GetID(), EActivation::Activate);
+
+		// Make the box rotate around Y
+		const Vec3 torque(0, 100.0f, 0);
+		body->AddTorque(torque);
+
+		// Simulate a step, this will make the box collide with the floor but should not result in the floor stopping the body
+		// but will cause the effective mass of the contact to become infinite so is a test if we are properly ignoring the contact in this case
+		c.SimulateSingleStep();
+
+		// Check that we did detect the collision
+		CHECK(contact_listener.Contains(LoggingContactListener::EType::Add, floor.GetID(), body->GetID()));
+
+		// Check that we have the correct angular velocity
+		Vec3 expected_angular_velocity = torque * c.GetDeltaTime() * body->GetInverseInertia()(1, 1);
+		CHECK_APPROX_EQUAL(body->GetAngularVelocity(), expected_angular_velocity);
+		CHECK(body->GetLinearVelocity() == Vec3::sZero());
+		CHECK(body->GetPosition() == initial_position);
+	}
+
 	TEST_CASE("TestSelectiveStateSaveAndRestore")
 	{
 		class MyFilter : public StateRecorderFilter
@@ -1681,5 +1762,74 @@ TEST_SUITE("PhysicsTests")
 			CHECK(box2.IsActive());
 			CHECK(!sphere2.IsActive());
 		}
+	}
+
+	// This tests that when switching UseManifoldReduction on/off we get the correct contact callbacks
+	TEST_CASE("TestSwitchUseManifoldReduction")
+	{
+		PhysicsTestContext c;
+
+		// Install listener
+		LoggingContactListener contact_listener;
+		c.GetSystem()->SetContactListener(&contact_listener);
+
+		// Create floor
+		Body &floor = c.CreateFloor();
+
+		// Create a compound with 4 boxes
+		Ref<BoxShape> box_shape = new BoxShape(Vec3::sReplicate(2));
+		Ref<StaticCompoundShapeSettings> shape_settings = new StaticCompoundShapeSettings();
+		shape_settings->AddShape(Vec3(5, 0, 0), Quat::sIdentity(), box_shape);
+		shape_settings->AddShape(Vec3(-5, 0, 0), Quat::sIdentity(), box_shape);
+		shape_settings->AddShape(Vec3(0, 0, 5), Quat::sIdentity(), box_shape);
+		shape_settings->AddShape(Vec3(0, 0, -5), Quat::sIdentity(), box_shape);
+		RefConst<StaticCompoundShape> compound_shape = static_cast<const StaticCompoundShape *>(shape_settings->Create().Get().GetPtr());
+		SubShapeID sub_shape_ids[] = {
+			compound_shape->GetSubShapeIDFromIndex(0, SubShapeIDCreator()).GetID(),
+			compound_shape->GetSubShapeIDFromIndex(1, SubShapeIDCreator()).GetID(),
+			compound_shape->GetSubShapeIDFromIndex(2, SubShapeIDCreator()).GetID(),
+			compound_shape->GetSubShapeIDFromIndex(3, SubShapeIDCreator()).GetID()
+		};
+
+		// Embed body a little bit into the floor so we immediately get contact callbacks
+		BodyCreationSettings body_settings(compound_shape, RVec3(0, 1.99_r, 0), Quat::sIdentity(), EMotionType::Dynamic, Layers::MOVING);
+		body_settings.mUseManifoldReduction = true;
+		BodyID body_id = c.GetBodyInterface().CreateAndAddBody(body_settings, EActivation::Activate);
+
+		// Trigger contact callbacks
+		c.SimulateSingleStep();
+
+		// Since manifold reduction is on and the contacts will be coplanar we should only get 1 contact with the floor
+		// Note that which sub shape ID we get is deterministic but not guaranteed to be a particular value, sub_shape_ids[3] is the one it currently returns!!
+		CHECK(contact_listener.GetEntryCount() == 5); // 4x validate + 1x add
+		CHECK(contact_listener.Contains(LoggingContactListener::EType::Add, floor.GetID(), SubShapeID(), body_id, sub_shape_ids[3]));
+		contact_listener.Clear();
+
+		// Now disable manifold reduction
+		c.GetBodyInterface().SetUseManifoldReduction(body_id, false);
+
+		// Trigger contact callbacks
+		c.SimulateSingleStep();
+
+		// Now manifold reduction is off so we should get collisions with each of the sub shapes
+		CHECK(contact_listener.GetEntryCount() == 8); // 4x validate + 1x persist + 3x add
+		CHECK(contact_listener.Contains(LoggingContactListener::EType::Persist, floor.GetID(), SubShapeID(), body_id, sub_shape_ids[3]));
+		CHECK(contact_listener.Contains(LoggingContactListener::EType::Add, floor.GetID(), SubShapeID(), body_id, sub_shape_ids[0]));
+		CHECK(contact_listener.Contains(LoggingContactListener::EType::Add, floor.GetID(), SubShapeID(), body_id, sub_shape_ids[1]));
+		CHECK(contact_listener.Contains(LoggingContactListener::EType::Add, floor.GetID(), SubShapeID(), body_id, sub_shape_ids[2]));
+		contact_listener.Clear();
+
+		// Now enable manifold reduction again
+		c.GetBodyInterface().SetUseManifoldReduction(body_id, true);
+
+		// Trigger contact callbacks
+		c.SimulateSingleStep();
+
+		// We should be back to the first state now where we only have 1 contact
+		CHECK(contact_listener.GetEntryCount() == 8); // 4x validate + 1x persist + 3x remove
+		CHECK(contact_listener.Contains(LoggingContactListener::EType::Persist, floor.GetID(), SubShapeID(), body_id, sub_shape_ids[3]));
+		CHECK(contact_listener.Contains(LoggingContactListener::EType::Remove, floor.GetID(), SubShapeID(), body_id, sub_shape_ids[0]));
+		CHECK(contact_listener.Contains(LoggingContactListener::EType::Remove, floor.GetID(), SubShapeID(), body_id, sub_shape_ids[1]));
+		CHECK(contact_listener.Contains(LoggingContactListener::EType::Remove, floor.GetID(), SubShapeID(), body_id, sub_shape_ids[2]));
 	}
 }
