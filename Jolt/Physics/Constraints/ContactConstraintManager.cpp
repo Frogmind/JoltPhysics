@@ -884,6 +884,8 @@ void ContactConstraintManager::GetContactsFromCache(ContactAllocator &ioContactA
 
 			ContactConstraint &constraint = mConstraints[constraint_idx];
 			new (&constraint) ContactConstraint();
+			constraint.mAnisotropicFriction1 = body1->GetAnisotropicFriction();
+			constraint.mAnisotropicFriction2 = body2->GetAnisotropicFriction();
 			constraint.mBody1 = body1;
 			constraint.mBody2 = body2;
 			constraint.mSortKey = input_hash;
@@ -1079,6 +1081,8 @@ bool ContactConstraintManager::TemplatedAddContactConstraint(ContactAllocator &i
 
 		ContactConstraint &constraint = mConstraints[constraint_idx];
 		new (&constraint) ContactConstraint();
+		constraint.mAnisotropicFriction1 = inBody1.GetAnisotropicFriction();
+		constraint.mAnisotropicFriction2 = inBody2.GetAnisotropicFriction();
 		constraint.mBody1 = &inBody1;
 		constraint.mBody2 = &inBody2;
 		constraint.mSortKey = key_hash;
@@ -1515,48 +1519,55 @@ JPH_INLINE bool ContactConstraintManager::sSolveVelocityConstraint(ContactConstr
 	Vec3 t1, t2;
 	ioConstraint.GetTangents(t1, t2);
 
-	Vec3 anisotropicFriction1 = ioConstraint.mBody1->GetAnisotropicFriction();
-	if (!anisotropicFriction1.IsClose(JPH::Vec3(1, 1, 1))) {
-		RMat44 body1Rotation = ioConstraint.mBody1->GetWorldTransform().GetRotation();
-		RMat44 body1InverseRotation = body1Rotation.Inversed3x3();
-
-		t1 = body1InverseRotation * t1;
-		t1 *= anisotropicFriction1;
-		t1 = body1Rotation * t1;
-
-		t2 = body1InverseRotation * t2;
-		t2 *= anisotropicFriction1;
-		t2 = body1Rotation * t2;
-	}
-
-	Vec3 anisotropicFriction2 = ioConstraint.mBody2->GetAnisotropicFriction();
-	if (!anisotropicFriction2.IsClose(JPH::Vec3(1, 1, 1))) {
-		RMat44 body2Rotation = ioConstraint.mBody2->GetWorldTransform().GetRotation();
-		RMat44 body2InverseRotation = body2Rotation.Inversed3x3();
-
-		t1 = body2InverseRotation * t1;
-		t1 *= anisotropicFriction2;
-		t1 = body2Rotation * t1;
-
-		t2 = body2InverseRotation * t2;
-		t2 *= anisotropicFriction2;
-		t2 = body2Rotation * t2;
-	}
-
-	constexpr float EPSILON = 0.0001f;
-
-	float t1_length_sq = t1.LengthSq();
 	float t1_length = 1;
-	if (t1_length_sq < 1.0f) {
-		t1_length = sqrtf(t1_length_sq);
-		t1 = t1_length > EPSILON ? t1 / t1_length : Vec3::sZero();
-	}
-
-	float t2_length_sq = t2.LengthSq();
 	float t2_length = 1;
-	if (t2_length_sq < 1.0f) {
-		t2_length = sqrtf(t2_length_sq);
-		t2 = t2_length > EPSILON ? t2 / t2_length : Vec3::sZero();
+
+	const Vec3 &anisotropicFriction1 = ioConstraint.mAnisotropicFriction1;
+	const Vec3 &anisotropicFriction2 = ioConstraint.mAnisotropicFriction2;
+	const bool hasAnisotropic1 = !anisotropicFriction1.IsClose(JPH::Vec3(1, 1, 1));
+	const bool hasAnisotropic2 = !anisotropicFriction2.IsClose(JPH::Vec3(1, 1, 1));
+	const bool hasAnisotropic = hasAnisotropic1 || hasAnisotropic2;
+
+	if (hasAnisotropic) {
+		if (hasAnisotropic1) {
+			RMat44 body1Rotation = ioConstraint.mBody1->GetWorldTransform().GetRotation();
+			RMat44 body1InverseRotation = body1Rotation.Inversed3x3();
+
+			t1 = body1InverseRotation * t1;
+			t1 *= anisotropicFriction1;
+			t1 = body1Rotation * t1;
+
+			t2 = body1InverseRotation * t2;
+			t2 *= anisotropicFriction1;
+			t2 = body1Rotation * t2;
+		}
+
+		if (hasAnisotropic2) {
+			RMat44 body2Rotation = ioConstraint.mBody2->GetWorldTransform().GetRotation();
+			RMat44 body2InverseRotation = body2Rotation.Inversed3x3();
+
+			t1 = body2InverseRotation * t1;
+			t1 *= anisotropicFriction2;
+			t1 = body2Rotation * t1;
+
+			t2 = body2InverseRotation * t2;
+			t2 *= anisotropicFriction2;
+			t2 = body2Rotation * t2;
+		}
+
+		constexpr float EPSILON = 0.0001f;
+
+		float t1_length_sq = t1.LengthSq();
+		if (t1_length_sq < 1.0f) {
+			t1_length = sqrt(t1_length_sq);
+			t1 = t1_length > EPSILON ? t1 / t1_length : Vec3::sZero();
+		}
+
+		float t2_length_sq = t2.LengthSq();
+		if (t2_length_sq < 1.0f) {
+			t2_length = sqrt(t2_length_sq);
+			t2 = t2_length > EPSILON ? t2 / t2_length : Vec3::sZero();
+		}
 	}
 
 	// First apply all friction constraints (non-penetration is more important than friction)

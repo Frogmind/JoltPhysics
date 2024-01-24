@@ -460,6 +460,8 @@ private:
 			outTangent2 = ws_normal.Cross(outTangent1);
 		}
 
+		Vec3					mAnisotropicFriction1;
+		Vec3					mAnisotropicFriction2;
 		Body *					mBody1;
 		Body *					mBody2;
 		uint64					mSortKey;
