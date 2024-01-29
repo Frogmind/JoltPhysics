@@ -184,11 +184,6 @@ public:
 	/// Destructor
 	virtual							~Shape() = default;
 
-
-	int32_t GetHypeHypeIndex() const { return mHypehypeIndex; }
-	void SetHypeHypeIndex(int32_t v) { mHypehypeIndex = v; }
-
-
 	/// Get type
 	inline EShapeType				GetType() const														{ return mShapeType; }
 	inline EShapeSubType			GetSubType() const													{ return mShapeSubType; }
@@ -196,6 +191,10 @@ public:
 	/// User data (to be used freely by the application)
 	uint64							GetUserData() const													{ return mUserData; }
 	void							SetUserData(uint64 inUserData)										{ mUserData = inUserData; }
+
+	/// User index
+	uint8 GetUserIndex() const { return mUserIndex; }
+	void SetUserIndex(uint8 v) { mUserIndex = v; }
 
 	/// Check if this shape can only be used to create a static body or if it can also be dynamic/kinematic
 	virtual bool					MustBeStatic() const												{ return false; }
@@ -444,7 +443,7 @@ protected:
 
 private:
 	uint64							mUserData = 0;
-	int32_t							mHypehypeIndex = 0;
+	uint8							mUserIndex = 0;
 	EShapeType						mShapeType;
 	EShapeSubType					mShapeSubType;
 };
