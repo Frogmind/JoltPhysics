@@ -1036,6 +1036,20 @@ void DebugRenderer::DrawPie(RVec3Arg inCenter, float inRadius, Vec3Arg inNormal,
 	DrawGeometry(matrix, inColor, geometry, ECullMode::Off, inCastShadow, inDrawMode);
 }
 
+// call once after frame is complete.
+// releases unused dynamically generated geometry assets.
+void JPH::DebugRenderer::NextFrame() {
+  auto garbageCollectFunc = [](auto& container) {
+    std::erase_if(container, [](auto&& entry) { return !entry.second->mUsedLastFrame; });
+    for (auto&& entry : container)
+      entry.second->mUsedLastFrame = false;
+  };
+
+  garbageCollectFunc(mPieLimits);
+  garbageCollectFunc(mSwingConeLimits);
+  garbageCollectFunc(mSwingPyramidLimits);
+}
+
 JPH_NAMESPACE_END
 
 #endif // JPH_DEBUG_RENDERER
