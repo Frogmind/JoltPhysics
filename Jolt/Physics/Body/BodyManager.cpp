@@ -217,7 +217,7 @@ Body *BodyManager::AllocateBody(const BodyCreationSettings &inBodyCreationSettin
 		mp->SetAngularDamping(inBodyCreationSettings.mAngularDamping);
 		mp->SetMaxLinearVelocity(inBodyCreationSettings.mMaxLinearVelocity);
 		mp->SetMaxAngularVelocity(inBodyCreationSettings.mMaxAngularVelocity);
-		mp->SetMassProperties(inBodyCreationSettings.mAllowedDOFs, inBodyCreationSettings.GetMassProperties());
+
 		mp->SetLinearVelocity(inBodyCreationSettings.mLinearVelocity); // Needs to happen after setting the max linear/angular velocity and setting allowed DOFs
 		mp->SetAngularVelocity(inBodyCreationSettings.mAngularVelocity);
 		mp->SetGravityFactor(inBodyCreationSettings.mGravityFactor);
