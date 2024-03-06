@@ -457,7 +457,7 @@ void SixDOFConstraint::SetupVelocityConstraint(float inDeltaTime)
 	// Setup rotation constraints
 	if (IsRotationFullyConstrained())
 	{
-		// All rotation locked: Setup rotation contraint
+		// All rotation locked: Setup rotation constraint
 		mRotationConstraintPart.CalculateConstraintProperties(*mBody1, Mat44::sRotation(mBody1->GetRotation()), *mBody2, Mat44::sRotation(mBody2->GetRotation()));
 	}
 	else if (IsRotationConstrained() || mRotationMotorActive)

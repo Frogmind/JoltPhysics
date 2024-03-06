@@ -143,6 +143,15 @@ public:
 	/// Check if the gyroscopic force is being applied for this body
 	inline bool				GetApplyGyroscopicForce() const									{ return (mFlags.load(memory_order_relaxed) & uint8(EFlags::ApplyGyroscopicForce)) != 0; }
 
+	/// Set to indicate that extra effort should be made to try to remove ghost contacts (collisions with internal edges of a mesh). This is more expensive but makes bodies move smoother over a mesh with convex edges.
+	inline void				SetEnhancedInternalEdgeRemoval(bool inApply)					{ JPH_ASSERT(IsRigidBody()); if (inApply) mFlags.fetch_or(uint8(EFlags::EnhancedInternalEdgeRemoval), memory_order_relaxed); else mFlags.fetch_and(uint8(~uint8(EFlags::EnhancedInternalEdgeRemoval)), memory_order_relaxed); }
+
+	/// Check if enhanced internal edge removal is turned on
+	inline bool				GetEnhancedInternalEdgeRemoval() const							{ return (mFlags.load(memory_order_relaxed) & uint8(EFlags::EnhancedInternalEdgeRemoval)) != 0; }
+
+	/// Checks if the combination of this body and inBody2 should use enhanced internal edge removal
+	inline bool				GetEnhancedInternalEdgeRemovalWithBody(const Body &inBody2) const { return ((mFlags.load(memory_order_relaxed) | inBody2.mFlags.load(memory_order_relaxed)) & uint8(EFlags::EnhancedInternalEdgeRemoval)) != 0; }
+
 	/// Get the bodies motion type.
 	inline EMotionType		GetMotionType() const											{ return mMotionType; }
 
@@ -160,7 +169,7 @@ public:
 	CollisionGroup &		GetCollisionGroup()												{ return mCollisionGroup; }
 	void					SetCollisionGroup(const CollisionGroup &inGroup)				{ mCollisionGroup = inGroup; }
 
-	/// If this body can go to sleep. Note that disabling sleeping on a sleeping object wil not wake it up.
+	/// If this body can go to sleep. Note that disabling sleeping on a sleeping object will not wake it up.
 	bool					GetAllowSleeping() const										{ return mMotionProperties->mAllowSleeping; }
 	void					SetAllowSleeping(bool inAllow);
 
@@ -267,6 +276,9 @@ public:
 	// Reset the total accumulated torque, not that this will be done automatically after every time step.
 	JPH_INLINE void			ResetTorque()													{ JPH_ASSERT(IsDynamic()); return mMotionProperties->ResetTorque(); }
 
+	// Reset the current velocity and accumulated force and torque.
+	JPH_INLINE void			ResetMotion()													{ JPH_ASSERT(!IsStatic()); return mMotionProperties->ResetMotion(); }
+
 	/// Get inverse inertia tensor in world space
 	inline Mat44			GetInverseInertia() const;
 
@@ -283,13 +295,13 @@ public:
 	void					MoveKinematic(RVec3Arg inTargetPosition, QuatArg inTargetRotation, float inDeltaTime);
 
 	/// Applies an impulse to the body that simulates fluid buoyancy and drag
-	/// @param inSurfacePosition Position on the fluid surface in world space
+	/// @param inSurfacePosition Position of the fluid surface in world space
 	/// @param inSurfaceNormal Normal of the fluid surface (should point up)
 	/// @param inBuoyancy The buoyancy factor for the body. 1 = neutral body, < 1 sinks, > 1 floats. Note that we don't use the fluid density since it is harder to configure than a simple number between [0, 2]
 	/// @param inLinearDrag Linear drag factor that slows down the body when in the fluid (approx. 0.5)
 	/// @param inAngularDrag Angular drag factor that slows down rotation when the body is in the fluid (approx. 0.01)
 	/// @param inFluidVelocity The average velocity of the fluid (in m/s) in which the body resides
-	/// @param inGravity The graviy vector (pointing down)
+	/// @param inGravity The gravity vector (pointing down)
 	/// @param inDeltaTime Delta time of the next simulation step (in s)
 	/// @return true if an impulse was applied, false if the body was not in the fluid
 	bool					ApplyBuoyancyImpulse(RVec3Arg inSurfacePosition, Vec3Arg inSurfaceNormal, float inBuoyancy, float inLinearDrag, float inAngularDrag, Vec3Arg inFluidVelocity, Vec3Arg inGravity, float inDeltaTime);
@@ -385,7 +397,7 @@ public:
 	/// Function to update body's position (should only be called by the BodyInterface since it also requires updating the broadphase)
 	void					SetPositionAndRotationInternal(RVec3Arg inPosition, QuatArg inRotation, bool inResetSleepTimer = true);
 
-	/// Updates the center of mass and optionally mass propertes after shifting the center of mass or changes to the shape (should only be called by the BodyInterface since it also requires updating the broadphase)
+	/// Updates the center of mass and optionally mass properties after shifting the center of mass or changes to the shape (should only be called by the BodyInterface since it also requires updating the broadphase)
 	/// @param inPreviousCenterOfMass Center of mass of the shape before the alterations
 	/// @param inUpdateMassProperties When true, the mass and inertia tensor is recalculated
 	void					UpdateCenterOfMassInternal(Vec3Arg inPreviousCenterOfMass, bool inUpdateMassProperties);
@@ -428,6 +440,7 @@ private:
 		InvalidateContactCache			= 1 << 3,											///< Set this bit to indicate that all collision caches for this body are invalid, will be reset the next simulation step.
 		UseManifoldReduction			= 1 << 4,											///< Set this bit to indicate that this body can use manifold reduction (if PhysicsSettings::mUseManifoldReduction is true)
 		ApplyGyroscopicForce			= 1 << 5,											///< Set this bit to indicate that the gyroscopic force should be applied to this body (aka Dzhanibekov effect, see https://en.wikipedia.org/wiki/Tennis_racket_theorem)
+		EnhancedInternalEdgeRemoval		= 1 << 6,											///< Set this bit to indicate that enhanced internal edge removal should be used for this body (see BodyCreationSettings::mEnhancedInternalEdgeRemoval)
 	};
 
 	// 16 byte aligned
@@ -455,14 +468,9 @@ private:
 	atomic<uint8>			mFlags = 0;														///< See EFlags for possible flags
 
 	// 122 bytes up to here (64-bit mode, single precision, 16-bit ObjectLayer)
-
-#if JPH_CPU_ADDRESS_BITS == 32
-	// Padding for mShape, mMotionProperties, mCollisionGroup.mGroupFilter being 4 instead of 8 bytes in 32 bit mode
-	uint8					mPadding[12];
-#endif
 };
 
-static_assert(sizeof(Body) == JPH_IF_SINGLE_PRECISION_ELSE(128, 160), "Body size is incorrect");
+static_assert(JPH_CPU_ADDRESS_BITS != 64 || sizeof(Body) == JPH_IF_SINGLE_PRECISION_ELSE(128, 160), "Body size is incorrect");
 static_assert(alignof(Body) == JPH_RVECTOR_ALIGNMENT, "Body should properly align");
 
 JPH_NAMESPACE_END

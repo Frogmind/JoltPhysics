@@ -27,7 +27,7 @@ void MotorcycleTest::Initialize()
 {
 	VehicleTest::Initialize();
 
-	// Loosly based on: https://www.whitedogbikes.com/whitedogblog/yamaha-xj-900-specs/
+	// Loosely based on: https://www.whitedogbikes.com/whitedogblog/yamaha-xj-900-specs/
 	const float back_wheel_radius = 0.31f;
 	const float back_wheel_width = 0.05f;
 	const float back_wheel_pos_z = -0.75f;
@@ -122,9 +122,11 @@ void MotorcycleTest::Initialize()
 	controller->mDifferentials[0].mDifferentialRatio = 1.93f * 40.0f / 16.0f; // Combining primary and final drive (back divided by front sprockets) from: https://www.blocklayer.com/rpm-gear-bikes
 
 	mVehicleConstraint = new VehicleConstraint(*mMotorcycleBody, vehicle);
-	mVehicleConstraint->SetVehicleCollisionTester(new VehicleCollisionTesterCastCylinder(Layers::MOVING, 1.0f)); // Use half wheel width as convex radius so we get a rounded cyclinder
+	mVehicleConstraint->SetVehicleCollisionTester(new VehicleCollisionTesterCastCylinder(Layers::MOVING, 1.0f)); // Use half wheel width as convex radius so we get a rounded cylinder
 	mPhysicsSystem->AddConstraint(mVehicleConstraint);
 	mPhysicsSystem->AddStepListener(mVehicleConstraint);
+
+	UpdateCameraPivot();
 }
 
 void MotorcycleTest::ProcessInput(const ProcessInputParams &inParams)
@@ -185,6 +187,8 @@ void MotorcycleTest::PrePhysicsUpdate(const PreUpdateParams &inParams)
 {
 	VehicleTest::PrePhysicsUpdate(inParams);
 
+	UpdateCameraPivot();
+
 	// On user input, assure that the motorcycle is active
 	if (mRight != 0.0f || mForward != 0.0f || mBrake != 0.0f)
 		mBodyInterface->ActivateBody(mMotorcycleBody->GetID());
@@ -198,7 +202,7 @@ void MotorcycleTest::PrePhysicsUpdate(const PreUpdateParams &inParams)
 	for (uint w = 0; w < 2; ++w)
 	{
 		const WheelSettings *settings = mVehicleConstraint->GetWheels()[w]->GetSettings();
-		RMat44 wheel_transform = mVehicleConstraint->GetWheelWorldTransform(w, Vec3::sAxisY(), Vec3::sAxisX()); // The cyclinder we draw is aligned with Y so we specify that as rotational axis
+		RMat44 wheel_transform = mVehicleConstraint->GetWheelWorldTransform(w, Vec3::sAxisY(), Vec3::sAxisX()); // The cylinder we draw is aligned with Y so we specify that as rotational axis
 		mDebugRenderer->DrawCylinder(wheel_transform, 0.5f * settings->mWidth, settings->mRadius, Color::sGreen);
 	}
 }
@@ -228,7 +232,7 @@ void MotorcycleTest::GetInitialCamera(CameraState &ioState) const
 	ioState.mForward = Vec3(cam_tgt - ioState.mPos).Normalized();
 }
 
-RMat44 MotorcycleTest::GetCameraPivot(float inCameraHeading, float inCameraPitch) const
+void MotorcycleTest::UpdateCameraPivot()
 {
 	// Pivot is center of motorcycle and rotates with motorcycle around Y axis only
 	Vec3 fwd = mMotorcycleBody->GetRotation().RotateAxisZ();
@@ -240,7 +244,7 @@ RMat44 MotorcycleTest::GetCameraPivot(float inCameraHeading, float inCameraPitch
 		fwd = Vec3::sAxisZ();
 	Vec3 up = Vec3::sAxisY();
 	Vec3 right = up.Cross(fwd);
-	return RMat44(Vec4(right, 0), Vec4(up, 0), Vec4(fwd, 0), mMotorcycleBody->GetPosition());
+	mCameraPivot = RMat44(Vec4(right, 0), Vec4(up, 0), Vec4(fwd, 0), mMotorcycleBody->GetPosition());
 }
 
 void MotorcycleTest::CreateSettingsMenu(DebugUI *inUI, UIElement *inSubMenu)

@@ -94,6 +94,7 @@ JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, LoadSaveSceneTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, LoadSaveBinaryTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, BigVsSmallTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ActiveEdgesTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, EnhancedInternalEdgeRemovalTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, MultithreadedTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ContactListenerTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ModifyMassTest)
@@ -134,6 +135,7 @@ static TestNameAndRTTI sGeneralTests[] =
 	{ "Load/Save Binary",					JPH_RTTI(LoadSaveBinaryTest) },
 	{ "Big vs Small",						JPH_RTTI(BigVsSmallTest) },
 	{ "Active Edges",						JPH_RTTI(ActiveEdgesTest) },
+	{ "Enhanced Internal Edge Removal",		JPH_RTTI(EnhancedInternalEdgeRemovalTest) },
 	{ "Multithreaded",						JPH_RTTI(MultithreadedTest) },
 	{ "Contact Listener",					JPH_RTTI(ContactListenerTest) },
 	{ "Modify Mass",						JPH_RTTI(ModifyMassTest) },
@@ -287,10 +289,12 @@ static TestNameAndRTTI sCharacterTests[] =
 };
 
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, WaterShapeTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, BoatTest)
 
 static TestNameAndRTTI sWaterTests[] =
 {
 	{ "Shapes",								JPH_RTTI(WaterShapeTest) },
+	{ "Boat",								JPH_RTTI(BoatTest) },
 };
 
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, VehicleSixDOFTest)
@@ -316,10 +320,15 @@ JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, SoftBodyGravityFactorTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, SoftBodyKinematicTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, SoftBodyUpdatePositionTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, SoftBodyStressTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, SoftBodyVsFastMovingTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, SoftBodyVertexRadiusTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, SoftBodyContactListenerTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, SoftBodyCustomUpdateTest)
 
 static TestNameAndRTTI sSoftBodyTests[] =
 {
 	{ "Soft Body vs Shapes",			JPH_RTTI(SoftBodyShapesTest) },
+	{ "Soft Body vs Fast Moving",		JPH_RTTI(SoftBodyVsFastMovingTest) },
 	{ "Soft Body Friction",				JPH_RTTI(SoftBodyFrictionTest) },
 	{ "Soft Body Restitution",			JPH_RTTI(SoftBodyRestitutionTest) },
 	{ "Soft Body Pressure",				JPH_RTTI(SoftBodyPressureTest) },
@@ -327,6 +336,9 @@ static TestNameAndRTTI sSoftBodyTests[] =
 	{ "Soft Body Kinematic",			JPH_RTTI(SoftBodyKinematicTest) },
 	{ "Soft Body Update Position",		JPH_RTTI(SoftBodyUpdatePositionTest) },
 	{ "Soft Body Stress Test",			JPH_RTTI(SoftBodyStressTest) },
+	{ "Soft Body Vertex Radius Test",	JPH_RTTI(SoftBodyVertexRadiusTest) },
+	{ "Soft Body Contact Listener",		JPH_RTTI(SoftBodyContactListenerTest) },
+	{ "Soft Body Custom Update",		JPH_RTTI(SoftBodyCustomUpdateTest) }
 };
 
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, BroadPhaseCastRayTest)
@@ -390,6 +402,12 @@ static constexpr uint cMaxContactConstraints = 20480;
 
 SamplesApp::SamplesApp()
 {
+	// Limit the render frequency to our simulation frequency so we don't play back the simulation too fast
+	// Note that if the simulation frequency > vsync frequency the simulation will slow down as we want
+	// to visualize every simulation step. When the simulation frequency is lower than the vsync frequency
+	// we will not render a new frame every frame as we want to show the result of the sim and not an interpolated version.
+	SetRenderFrequency(mUpdateFrequency);
+
 	// Allocate temp memory
 #ifdef JPH_DISABLE_TEMP_ALLOCATOR
 	mTempAllocator = new TempAllocatorMalloc();
@@ -437,7 +455,7 @@ SamplesApp::SamplesApp()
 			UIElement *phys_settings = mDebugUI->CreateMenu();
 			mDebugUI->CreateSlider(phys_settings, "Max Concurrent Jobs", float(mMaxConcurrentJobs), 1, float(thread::hardware_concurrency()), 1, [this](float inValue) { mMaxConcurrentJobs = (int)inValue; });
 			mDebugUI->CreateSlider(phys_settings, "Gravity (m/s^2)", -mPhysicsSystem->GetGravity().GetY(), 0.0f, 20.0f, 1.0f, [this](float inValue) { mPhysicsSystem->SetGravity(Vec3(0, -inValue, 0)); });
-			mDebugUI->CreateSlider(phys_settings, "Update Frequency (Hz)", mUpdateFrequency, 7.5f, 300.0f, 2.5f, [this](float inValue) { mUpdateFrequency = inValue; });
+			mDebugUI->CreateSlider(phys_settings, "Update Frequency (Hz)", mUpdateFrequency, 7.5f, 300.0f, 2.5f, [this](float inValue) { mUpdateFrequency = inValue; SetRenderFrequency(mUpdateFrequency); });
 			mDebugUI->CreateSlider(phys_settings, "Num Collision Steps", float(mCollisionSteps), 1.0f, 4.0f, 1.0f, [this](float inValue) { mCollisionSteps = int(inValue); });
 			mDebugUI->CreateSlider(phys_settings, "Num Velocity Steps", float(mPhysicsSettings.mNumVelocitySteps), 0, 30, 1, [this](float inValue) { mPhysicsSettings.mNumVelocitySteps = int(round(inValue)); mPhysicsSystem->SetPhysicsSettings(mPhysicsSettings); });
 			mDebugUI->CreateSlider(phys_settings, "Num Position Steps", float(mPhysicsSettings.mNumPositionSteps), 0, 30, 1, [this](float inValue) { mPhysicsSettings.mNumPositionSteps = int(round(inValue)); mPhysicsSystem->SetPhysicsSettings(mPhysicsSettings); });
@@ -1448,7 +1466,7 @@ bool SamplesApp::CastProbe(float inProbeLength, float &outFraction, RVec3 &outPo
 					SphereShape point_sphere(1.0e-6f);
 					point_sphere.SetEmbedded();
 					CollideShapeSettings settings;
-					settings.mMaxSeparationDistance = max_distance;
+					settings.mMaxSeparationDistance = sqrt(3.0f) * max_distance; // Box is extended in all directions by max_distance
 					ClosestHitCollisionCollector<CollideShapeCollector> collide_shape_collector;
 					ts.CollideShape(&point_sphere, Vec3::sReplicate(1.0f), RMat44::sTranslation(start + vertex.mPosition), settings, start, collide_shape_collector);
 					if (collide_shape_collector.HadHit())
@@ -1466,11 +1484,13 @@ bool SamplesApp::CastProbe(float inProbeLength, float &outFraction, RVec3 &outPo
 			// Draw collision plane
 			if (vertex.mCollidingShapeIndex != -1)
 			{
-				RVec3 plane_point = start + closest_point - vertex.mCollisionPlane.GetNormal() * vertex.mCollisionPlane.SignedDistance(closest_point);
+				RVec3 plane_point = start + vertex.mPosition - vertex.mCollisionPlane.GetNormal() * vertex.mCollisionPlane.SignedDistance(vertex.mPosition);
 				mDebugRenderer->DrawPlane(plane_point, vertex.mCollisionPlane.GetNormal(), Color::sGreen, 2.0f);
 
 				if (abs(closest_point_penetration - vertex.mLargestPenetration) > 0.001f)
 					mDebugRenderer->DrawText3D(plane_point, StringFormat("Pen %f (exp %f)", (double)vertex.mLargestPenetration, (double)closest_point_penetration));
+				else
+					mDebugRenderer->DrawText3D(plane_point, StringFormat("Pen %f", (double)vertex.mLargestPenetration));
 			}
 		}
 		break;
@@ -1796,13 +1816,8 @@ void SamplesApp::UpdateDebug(float inDeltaTime)
 	BodyInterface &bi = mPhysicsSystem->GetBodyInterface();
 
 	// Handle keyboard input for which simulation needs to be running
-	for (int key = mKeyboard->GetFirstKey(); key != 0; key = mKeyboard->GetNextKey())
-		switch (key)
-		{
-		case DIK_B:
-			ShootObject();
-			break;
-		}
+	if (mKeyboard->IsKeyPressedAndTriggered(DIK_B, mWasShootKeyPressed))
+		ShootObject();
 
 	// Allow the user to drag rigid/soft bodies around
 	if (mDragConstraint == nullptr && mDragVertexIndex == ~uint(0))
@@ -1931,7 +1946,7 @@ void SamplesApp::UpdateDebug(float inDeltaTime)
 	}
 }
 
-bool SamplesApp::RenderFrame(float inDeltaTime)
+bool SamplesApp::UpdateFrame(float inDeltaTime)
 {
 	// Reinitialize the job system if the concurrency setting changed
 	if (mMaxConcurrentJobs != mJobSystem->GetMaxConcurrency())
@@ -2154,7 +2169,7 @@ bool SamplesApp::RenderFrame(float inDeltaTime)
 			UpdateDebug(inDeltaTime);
 
 			{
-				// Pocess input, this is done once and before we save the state so that we can save the input state
+				// Process input, this is done once and before we save the state so that we can save the input state
 				JPH_PROFILE("ProcessInput");
 				Test::ProcessInputParams handle_input;
 				handle_input.mDeltaTime = 1.0f / mUpdateFrequency;

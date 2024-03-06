@@ -985,13 +985,21 @@ void DebugRenderer::DrawSwingConeLimits(RMat44Arg inMatrix,
   JPH_ASSERT(inSwingZHalfAngle >= 0.0f && inSwingZHalfAngle <= JPH_PI);
   JPH_ASSERT(inEdgeLength > 0.0f);
 
-  // Check cache
-  SwingConeLimits limits{inSwingYHalfAngle, inSwingZHalfAngle};
-  GeometryRef &geometry = mSwingConeLimits[limits];
-  if (geometry == nullptr) {
-    // Number of segments to draw the cone with
-    const int num_segments = 64;
-    int half_num_segments = num_segments / 2;
+
+	// Check cache
+	SwingConeLimits limits { inSwingYHalfAngle, inSwingZHalfAngle };
+	GeometryRef &geometry = mSwingConeLimits[limits];
+	if (geometry == nullptr)
+	{
+		SwingConeBatches::iterator it = mPrevSwingConeLimits.find(limits);
+		if (it != mPrevSwingConeLimits.end())
+			geometry = it->second;
+	}
+	if (geometry == nullptr)
+	{
+		// Number of segments to draw the cone with
+		const int num_segments = 64;
+		int half_num_segments = num_segments / 2;
 
     // The y and z values of the quaternion are limited to an ellipse, e1 and e2
     // are the radii of this ellipse
@@ -1062,14 +1070,20 @@ void DebugRenderer::DrawSwingPyramidLimits(
              inMinSwingZAngle <= inMaxSwingZAngle);
   JPH_ASSERT(inEdgeLength > 0.0f);
 
-  // Check cache
-  SwingPyramidLimits limits{inMinSwingYAngle, inMaxSwingYAngle,
-                            inMinSwingZAngle, inMaxSwingZAngle};
-  GeometryRef &geometry = mSwingPyramidLimits[limits];
-  if (geometry == nullptr) {
-    // Number of segments to draw the cone with
-    const int num_segments = 64;
-    int quarter_num_segments = num_segments / 4;
+	// Check cache
+	SwingPyramidLimits limits { inMinSwingYAngle, inMaxSwingYAngle, inMinSwingZAngle, inMaxSwingZAngle };
+	GeometryRef &geometry = mSwingPyramidLimits[limits];
+	if (geometry == nullptr)
+	{
+		SwingPyramidBatches::iterator it = mPrevSwingPyramidLimits.find(limits);
+		if (it != mPrevSwingPyramidLimits.end())
+			geometry = it->second;
+	}
+	if (geometry == nullptr)
+	{
+		// Number of segments to draw the cone with
+		const int num_segments = 64;
+		int quarter_num_segments = num_segments / 4;
 
     // Note that this is q = Quat::sRotation(Vec3::sAxisZ(), z) *
     // Quat::sRotation(Vec3::sAxisY(), y) with q.x set to zero so we don't
@@ -1133,11 +1147,18 @@ void DebugRenderer::DrawPie(RVec3Arg inCenter, float inRadius, Vec3Arg inNormal,
   JPH_ASSERT(inNormal.IsNormalized(1.0e-4f));
   JPH_ASSERT(abs(inNormal.Dot(inAxis)) < 1.0e-4f);
 
-  // Pies have a unique batch based on the difference between min and max angle
-  float delta_angle = inMaxAngle - inMinAngle;
-  GeometryRef &geometry = mPieLimits[delta_angle];
-  if (geometry == nullptr) {
-    int num_parts = (int)ceil(64.0f * delta_angle / (2.0f * JPH_PI));
+	// Pies have a unique batch based on the difference between min and max angle
+	float delta_angle = inMaxAngle - inMinAngle;
+	GeometryRef &geometry = mPieLimits[delta_angle];
+	if (geometry == nullptr)
+	{
+		PieBatces::iterator it = mPrevPieLimits.find(delta_angle);
+		if (it != mPrevPieLimits.end())
+			geometry = it->second;
+	}
+	if (geometry == nullptr)
+	{
+		int num_parts = (int)ceil(64.0f * delta_angle / (2.0f * JPH_PI));
 
     Float3 normal = {0, 1, 0};
     Float3 center = {0, 0, 0};
@@ -1189,8 +1210,7 @@ void DebugRenderer::DrawPie(RVec3Arg inCenter, float inRadius, Vec3Arg inNormal,
 
 void JPH::DebugRenderer::RunGarbageCollection() {
   auto garbageCollectFunc = [](auto &container) {
-    std::erase_if(container,
-                  [](auto &&entry) { return !entry.second->mUsedLastFrame; });
+    std::erase_if(container, [](auto &&entry) { return !entry.second->mUsedLastFrame; });
     for (auto &&entry : container)
       entry.second->mUsedLastFrame = false;
   };

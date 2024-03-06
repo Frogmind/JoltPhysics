@@ -2,10 +2,19 @@
 
 This document lists all breaking API changes by date and by release tag. Note that not all API changes are listed here, trivial changes (that cause a compile error and require an obvious fix) are not listed.
 
-Changes that make some state saved through SaveBinaryState from a prior version of the library unreadable by the new version is marked as *SBS*. See 'Saving Shapes' in [Architecture and API documentation](https://jrouwe.github.io/JoltPhysics/) for further information.
+Changes that make some state saved through SaveBinaryState from a prior version of the library unreadable by the new version is marked as *SBS*. See [Saving Shapes](https://jrouwe.github.io/JoltPhysics/#saving-shapes) for further information.
 
 ## Changes between v4.0.2 and latest
 
+* 20240225 - *SBS* - Changes were made to SoftBodySharedSettings that break the binary serialization format of that class. (277b818ffefed4f15477ff1e6d0cc07065899903)
+* 20240223 - Added ConvexShape::ESupportMode::Default. If you have custom convex shapes you need to handle this in ConvexShape::GetSupportFunction. (0f67cc2915c5e34a4a38480580dad73888a1952e)
+* 20240216 - Restriction angular motion using EAllowedDOFs now works in world space rather than in local space. This change was made to be more in line with other physics engines and to fix some issues with constraints. If you need the old behavior then copy [this](https://github.com/jrouwe/JoltPhysics/blob/9631e217e54b8492ac36471f2aa966df40d6c2ad/Jolt/Physics/Body/MotionProperties.cpp#L33-L118) code into your own code base and call MotionProperties::SetInverseInertia(diagonal, rotation) where diagonal is called mInvInertiaDiagonal and rotation is called mInertiaRotation in the code snippet. (191536d51d71ee29147205aa09d1acab52789e5f)
+* 20240210 - Fixed spelling error EPathRotationConstraintType::ConstaintToPath to EPathRotationConstraintType::ConstrainToPath (6c095bbf7906b01f427b52d43212f5ebf760fc81)
+* 20240210 - Added extra parameter fraction hint to PathConstraintPath::GetClosestPoint. This can be used to speed up the search along the curve and to disambiguate fractions in case a path reaches the same point multiple times (i.e. a figure-8) (b91e729e6e2c34df16cc03f5ac3b3f6d3fa8b762)
+* 20240203 - Longitudinal friction impulse for wheeled/tracked vehicles could become much higher than the calculated max because each iteration it was clamped to the max friction impulse which meant the total friction impulse could be PhysicsSettings::mNumVelocitySteps times too high. In case this breaks your vehicle, the new max tire impulse callback can be used to restore the old behavior, see [the vehicle constraint test](https://github.com/jrouwe/JoltPhysics/blob/a456b244aa2ad2ce0a8124d27823377ed0b1c4b4/Samples/Tests/Vehicle/VehicleConstraintTest.cpp#L156-L164). (a456b244aa2ad2ce0a8124d27823377ed0b1c4b4)
+* 20240120 - *SBS* - Implemented enhanced internal edge removal algorithm. This breaks the binary serialization format for BodyCreationSettings. (94c1ad811b95c72f4d3bb6841c73c1c3461caa91)
+* 20240113 - VehicleConstraint::CombineFunction now calculates both longitudinal and lateral friction in 1 call so there can be dependencies between the two. (d6ed5b3e7b22904af555088b6ae4770f8fb0e00f)
+* 20240105 - CharacterVirtual will now receive an OnContactAdded callback when it collides with a sensor (but will have no further interaction). You may need to update the logic in your CharacterContactListener to ignore those contacts. (fb778c568d3ba14556559324671ffec172957f5c)
 * 20240101 - Renamed SensorDetectsStatic to CollideKinematicVsNonDynamic and made it work for non-sensors. This means that kinematic bodies can now get collision callbacks when they collide with other static / kinematic objects. It can also affect the order in which bodies are passed in the ContactListener::OnContactValidate callback. (2d607c4161a65201d66558a2cc76d1265aea527e)
 * 20231220 - *SBS* - Added ability to enable gyroscopic forces on BodyCreationSettings. This breaks the binary serialization format for this class. (9d7748eaa91341adc17554f32bf991bfed04e47e)
 * 20231219 - *SBS* - Added a 'swing type' attribute to SixDOFConstraint and SwingTwistConstraint. This breaks the binary serialization format. (41016256e2cf1262ec05cff3cfa7645668ee0bf0)
@@ -50,7 +59,7 @@ Changes that make some state saved through SaveBinaryState from a prior version 
 * 20221204 - Changes related to double precision support for positions (a2c1c22059fa031faf0208258e654bcff79a63e4)
 	* In many places in the public API Vec3 has been replaced by RVec3 (a Vec3 of Real values which can either be double or float depending on if JPH_DOUBLE_PRECISION is defined). In the same way RMat44 replaces Mat44. When compiling in single precision mode (the default) you should not notice a change.
 	* Shape::GetSubmergedVolume now takes a plane that's relative to inCenterOfMassTransform instead of one in world space
-	* Many of the NarrowPhaseQuery and TransformedShape collision queries now have a 'base offset' that you need to specify. Read the Big Worlds section in [Architecture and API documentation](https://jrouwe.github.io/JoltPhysics/) for more info.
+	* Many of the NarrowPhaseQuery and TransformedShape collision queries now have a 'base offset' that you need to specify. Go to [Big Worlds](https://jrouwe.github.io/JoltPhysics/#big-worlds) for more info.
 	* The NarrowPhaseQuery/TransformedShape CastRay / CastShape functions now take a RRayCast / RShapeCast struct as input. When compiling in single precision mode this is the same as a RayCast or ShapeCast so only the type name needs to be updated.
 	* If you implement your own TempAllocator and want to compile in double precision, make sure you align to JPH_RVECTOR_ALIGNMENT bytes (instead of 16)
 	* The SkeletonPose got a 'root offset' member, this means that the ragdoll will now make the joint transform of the first body zero and put that offset in the 'root offset'.

@@ -152,8 +152,21 @@ void VehicleConstraintTest::Initialize()
 	}
 
 	mVehicleConstraint = new VehicleConstraint(*mCarBody, vehicle);
+
+	// The vehicle settings were tweaked with a buggy implementation of the longitudinal tire impulses, this meant that PhysicsSettings::mNumVelocitySteps times more impulse
+	// could be applied than intended. To keep the behavior of the vehicle the same we increase the max longitudinal impulse by the same factor. In a future version the vehicle
+	// will be retweaked.
+	static_cast<WheeledVehicleController *>(mVehicleConstraint->GetController())->SetTireMaxImpulseCallback(
+		[](uint, float &outLongitudinalImpulse, float &outLateralImpulse, float inSuspensionImpulse, float inLongitudinalFriction, float inLateralFriction, float, float, float)
+		{
+			outLongitudinalImpulse = 10.0f * inLongitudinalFriction * inSuspensionImpulse;
+			outLateralImpulse = inLateralFriction * inSuspensionImpulse;
+		});
+
 	mPhysicsSystem->AddConstraint(mVehicleConstraint);
 	mPhysicsSystem->AddStepListener(mVehicleConstraint);
+
+	UpdateCameraPivot();
 }
 
 void VehicleConstraintTest::ProcessInput(const ProcessInputParams &inParams)
@@ -204,6 +217,8 @@ void VehicleConstraintTest::PrePhysicsUpdate(const PreUpdateParams &inParams)
 {
 	VehicleTest::PrePhysicsUpdate(inParams);
 
+	UpdateCameraPivot();
+
 	// On user input, assure that the car is active
 	if (mRight != 0.0f || mForward != 0.0f || mBrake != 0.0f || mHandBrake != 0.0f)
 		mBodyInterface->ActivateBody(mCarBody->GetID());
@@ -230,7 +245,7 @@ void VehicleConstraintTest::PrePhysicsUpdate(const PreUpdateParams &inParams)
 	for (uint w = 0; w < 4; ++w)
 	{
 		const WheelSettings *settings = mVehicleConstraint->GetWheels()[w]->GetSettings();
-		RMat44 wheel_transform = mVehicleConstraint->GetWheelWorldTransform(w, Vec3::sAxisY(), Vec3::sAxisX()); // The cyclinder we draw is aligned with Y so we specify that as rotational axis
+		RMat44 wheel_transform = mVehicleConstraint->GetWheelWorldTransform(w, Vec3::sAxisY(), Vec3::sAxisX()); // The cylinder we draw is aligned with Y so we specify that as rotational axis
 		mDebugRenderer->DrawCylinder(wheel_transform, 0.5f * settings->mWidth, settings->mRadius, Color::sGreen);
 	}
 }
@@ -261,7 +276,7 @@ void VehicleConstraintTest::GetInitialCamera(CameraState &ioState) const
 	ioState.mForward = Vec3(cam_tgt - ioState.mPos).Normalized();
 }
 
-RMat44 VehicleConstraintTest::GetCameraPivot(float inCameraHeading, float inCameraPitch) const
+void VehicleConstraintTest::UpdateCameraPivot()
 {
 	// Pivot is center of car and rotates with car around Y axis only
 	Vec3 fwd = mCarBody->GetRotation().RotateAxisZ();
@@ -273,7 +288,7 @@ RMat44 VehicleConstraintTest::GetCameraPivot(float inCameraHeading, float inCame
 		fwd = Vec3::sAxisZ();
 	Vec3 up = Vec3::sAxisY();
 	Vec3 right = up.Cross(fwd);
-	return RMat44(Vec4(right, 0), Vec4(up, 0), Vec4(fwd, 0), mCarBody->GetPosition());
+	mCameraPivot = RMat44(Vec4(right, 0), Vec4(up, 0), Vec4(fwd, 0), mCarBody->GetPosition());
 }
 
 void VehicleConstraintTest::CreateSettingsMenu(DebugUI *inUI, UIElement *inSubMenu)
