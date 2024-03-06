@@ -34,6 +34,8 @@ public:
 	float					mMaxConvexRadius = 0.0f;											///< Convex radius as supplied by the constructor. Note that during hull creation the convex radius can be made smaller if the value is too big for the hull.
 	float					mMaxErrorConvexRadius = 0.05f;										///< Maximum distance between the shrunk hull + convex radius and the actual hull.
 	float					mHullTolerance = 1.0e-3f;											///< Points are allowed this far outside of the hull (increasing this yields a hull with less vertices). Note that the actual used value can be larger if the points of the hull are far apart.
+	bool 					mOverrideCenterOfMass = false;										///< If true, use mGivenCoM as the center of mass instead of the calculated center of mass.
+	JPH::Vec3				mGivenCoM = JPH::Vec3::sZero();										///< If override center of mass is true, use this value instead of the calculated center of mass.
 };
 
 /// A convex hull

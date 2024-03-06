@@ -1451,6 +1451,17 @@ void PhysicsSystem::JobPreIntegrateVelocity(PhysicsUpdateContext *ioContext, Phy
 	mLargeIslandSplitter.PrepareForSolvePositions();
 }
 
+void PhysicsSystem::ClearTemporaryVelocities()
+{
+	const BodyID* active_bodies = mBodyManager.GetActiveBodiesUnsafe(EBodyType::RigidBody);
+	uint32 num_active_bodies = mBodyManager.GetNumActiveBodies(EBodyType::RigidBody);
+	for (uint32 i = 0; i < num_active_bodies; ++i)
+	{
+		Body &body = mBodyManager.GetBody(active_bodies[i]);
+		body.ClearTemporaryVelocities();
+	}
+}
+
 void PhysicsSystem::JobIntegrateVelocity(const PhysicsUpdateContext *ioContext, PhysicsUpdateContext::Step *ioStep)
 {
 #ifdef JPH_ENABLE_ASSERTS
@@ -1571,7 +1582,6 @@ void PhysicsSystem::JobIntegrateVelocity(const PhysicsUpdateContext *ioContext, 
 				ioStep->mActiveBodyToCCDBody[active_body_idx] = -1;
 			}
 
-			body.ClearTemporaryVelocities();
 			active_body_idx++;
 		}
 	}

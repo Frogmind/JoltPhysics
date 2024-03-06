@@ -35,9 +35,8 @@ public:
 										DebugRenderer();
 	virtual								~DebugRenderer();
 
-	/// Call once per frame, after frame is complete.
 	/// Remove unused generated meshes, mark all remaining meshes as unused
-	void								NextFrame();
+	void								RunGarbageCollection();
 
 	/// Draw line
 	virtual void						DrawLine(RVec3Arg inFrom, RVec3Arg inTo, ColorArg inColor) = 0;
@@ -199,8 +198,8 @@ public:
 		/// Bounding box that encapsulates all LODs
 		AABox							mBounds;
 
-		/// Keep track of whether the geometry is currently used or not.
-		bool							mUsedLastFrame = true;
+		/// Was used last frame?
+		bool							mUsedLastFrame = true;		
 	};
 
 	/// Handle for a lodded triangle batch

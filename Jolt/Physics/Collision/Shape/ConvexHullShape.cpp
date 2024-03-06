@@ -83,6 +83,10 @@ ConvexHullShape::ConvexHullShape(const ConvexHullShapeSettings &inSettings, Shap
 	// Calculate center of mass and volume
 	builder.GetCenterOfMassAndVolume(mCenterOfMass, mVolume);
 
+	if (inSettings.mOverrideCenterOfMass) {
+		mCenterOfMass = inSettings.mGivenCoM;
+	}
+
 	// Calculate covariance matrix
 	// See:
 	// - Why the inertia tensor is the inertia tensor - Jonathan Blow (http://number-none.com/blow/inertia/deriving_i.html)
