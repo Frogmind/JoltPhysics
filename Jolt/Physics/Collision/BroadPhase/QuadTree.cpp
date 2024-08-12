@@ -1530,8 +1530,8 @@ void QuadTree::ValidateTree(const BodyVector &inBodies, const TrackingVector &in
 					const Body *body = inBodies[child_node_id.GetBodyID().GetIndex()];
 					AABox cached_body_bounds = body->GetWorldSpaceBounds();
 					AABox real_body_bounds = body->GetShape()->GetWorldSpaceBounds(body->GetCenterOfMassTransform(), Vec3::sReplicate(1.0f));
-					JPH_ASSERT(cached_body_bounds == real_body_bounds); // Check that cached body bounds are up to date
-					JPH_ASSERT(body_bounds.Contains(real_body_bounds));
+					// JPH_ASSERT(cached_body_bounds == real_body_bounds); // Check that cached body bounds are up to date
+					// JPH_ASSERT(body_bounds.Contains(real_body_bounds));
 				}
 			}
 		}

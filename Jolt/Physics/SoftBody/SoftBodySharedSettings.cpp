@@ -72,7 +72,9 @@ JPH_IMPLEMENT_SERIALIZABLE_NON_VIRTUAL(SoftBodySharedSettings::Skinned)
 	JPH_ADD_ATTRIBUTE(SoftBodySharedSettings::Skinned, mVertex)
 	JPH_ADD_ATTRIBUTE(SoftBodySharedSettings::Skinned, mWeights)
 	JPH_ADD_ATTRIBUTE(SoftBodySharedSettings::Skinned, mMaxDistance)
-	JPH_ADD_ATTRIBUTE(SoftBodySharedSettings::Skinned, mBackStop)
+	JPH_ADD_ATTRIBUTE(SoftBodySharedSettings::Skinned, mBackStopDistance)
+	JPH_ADD_ATTRIBUTE(SoftBodySharedSettings::Skinned, mBackStopRadius)
+	JPH_ADD_ATTRIBUTE(SoftBodySharedSettings::Skinned, mNormalInfo)
 }
 
 JPH_IMPLEMENT_SERIALIZABLE_NON_VIRTUAL(SoftBodySharedSettings)
@@ -881,24 +883,6 @@ void SoftBodySharedSettings::Optimize(OptimizationResults &outResults)
 	// Free closest kinematic buffer
 	mClosestKinematic.clear();
 	mClosestKinematic.shrink_to_fit();
-}
-
-Ref<SoftBodySharedSettings> SoftBodySharedSettings::Clone() const
-{
-	Ref<SoftBodySharedSettings> clone = new SoftBodySharedSettings;
-	clone->mVertices = mVertices;
-	clone->mFaces = mFaces;
-	clone->mEdgeConstraints = mEdgeConstraints;
-	clone->mDihedralBendConstraints = mDihedralBendConstraints;
-	clone->mVolumeConstraints = mVolumeConstraints;
-	clone->mSkinnedConstraints = mSkinnedConstraints;
-	clone->mSkinnedConstraintNormals = mSkinnedConstraintNormals;
-	clone->mInvBindMatrices = mInvBindMatrices;
-	clone->mLRAConstraints = mLRAConstraints;
-	clone->mMaterials = mMaterials;
-	clone->mVertexRadius = mVertexRadius;
-	clone->mUpdateGroups = mUpdateGroups;
-	return clone;
 }
 
 void SoftBodySharedSettings::SaveBinaryState(StreamOut &inStream) const

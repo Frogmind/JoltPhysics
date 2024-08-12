@@ -195,10 +195,6 @@ public:
 		mTorque.z *= v.GetZ();
 	}
 
-	// Reset the total accumulated force, not that this will be done automatically after every time step.
-	// Get the total amount of torque applied to the center of mass this time step (through Body::AddForce/Body::AddTorque calls). Note that it will reset to zero after PhysicsSystem::Update.
-	JPH_INLINE Vec3			GetAccumulatedTorque() const									{ return Vec3::sLoadFloat3Unsafe(mTorque); }
-
 	// Reset the total accumulated force, note that this will be done automatically after every time step.
 	JPH_INLINE void			ResetForce()													{ mForce = Float3(0, 0, 0); }
 

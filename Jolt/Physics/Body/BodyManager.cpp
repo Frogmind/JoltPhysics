@@ -1086,13 +1086,13 @@ void BodyManager::Draw(const DrawSettings& inDrawSettings, const PhysicsSettings
 			mp->DrawVertices(inRenderer, com);
 
 		if (inDrawSettings.mDrawSoftBodyEdgeConstraints)
-			mp->DrawEdgeConstraints(inRenderer, com);
+			mp->DrawEdgeConstraints(inRenderer, com, JPH::ESoftBodyConstraintColor::ConstraintOrder);
 
 		if (inDrawSettings.mDrawSoftBodyVolumeConstraints)
-			mp->DrawVolumeConstraints(inRenderer, com);
+			mp->DrawVolumeConstraints(inRenderer, com, JPH::ESoftBodyConstraintColor::ConstraintOrder);
 
 		if (inDrawSettings.mDrawSoftBodySkinConstraints)
-			mp->DrawSkinConstraints(inRenderer);
+			mp->DrawSkinConstraints(inRenderer, com, JPH::ESoftBodyConstraintColor::ConstraintOrder);
 
 		if (inDrawSettings.mDrawSoftBodyPredictedBounds)
 			mp->DrawPredictedBounds(inRenderer, com);
