@@ -174,19 +174,19 @@ public:
 	EMotorState					GetMotorState(EAxis inAxis) const							{ return mMotorState[inAxis]; }
 
 	/// Set the target velocity in body 1 constraint space
-	Vec3		 				GetTargetVelocityCS() const									{ return mTargetVelocity; }
+	Vec3						GetTargetVelocityCS() const									{ return mTargetVelocity; }
 	void						SetTargetVelocityCS(Vec3Arg inVelocity)						{ mTargetVelocity = inVelocity; }
 
 	/// Set the target angular velocity in body 2 constraint space (!)
 	void						SetTargetAngularVelocityCS(Vec3Arg inAngularVelocity)		{ mTargetAngularVelocity = inAngularVelocity; }
-	Vec3		 				GetTargetAngularVelocityCS() const							{ return mTargetAngularVelocity; }
+	Vec3						GetTargetAngularVelocityCS() const							{ return mTargetAngularVelocity; }
 
 	void						SetTargetAngularVelocityX_CS(float inAngularVelocity)		{ mTargetAngularVelocity.SetX(inAngularVelocity); }
 	void						SetTargetAngularVelocityY_CS(float inAngularVelocity)		{ mTargetAngularVelocity.SetY(inAngularVelocity); }
 	void						SetTargetAngularVelocityZ_CS(float inAngularVelocity)		{ mTargetAngularVelocity.SetZ(inAngularVelocity); }
 
 	/// Set the target position in body 1 constraint space
-	Vec3		 				GetTargetPositionCS() const									{ return mTargetPosition; }
+	Vec3						GetTargetPositionCS() const									{ return mTargetPosition; }
 	void						SetTargetPositionCS(Vec3Arg inPosition)						{ mTargetPosition = inPosition; }
 
 	/// Set the target orientation in body 1 constraint space
@@ -198,7 +198,7 @@ public:
 	void						SetTargetOrientationBS(QuatArg inOrientation)				{ SetTargetOrientationCS(mConstraintToBody1.Conjugated() * inOrientation * mConstraintToBody2); }
 
 	///@name Get Lagrange multiplier from last physics update (the linear/angular impulse applied to satisfy the constraint)
-	inline Vec3		 			GetTotalLambdaPosition() const								{ return IsTranslationFullyConstrained()? mPointConstraintPart.GetTotalLambda() : Vec3(mTranslationConstraintPart[0].GetTotalLambda(), mTranslationConstraintPart[1].GetTotalLambda(), mTranslationConstraintPart[2].GetTotalLambda()); }
+	inline Vec3					GetTotalLambdaPosition() const								{ return IsTranslationFullyConstrained()? mPointConstraintPart.GetTotalLambda() : Vec3(mTranslationConstraintPart[0].GetTotalLambda(), mTranslationConstraintPart[1].GetTotalLambda(), mTranslationConstraintPart[2].GetTotalLambda()); }
 	inline Vec3					GetTotalLambdaRotation() const								{ return IsRotationFullyConstrained()? mRotationConstraintPart.GetTotalLambda() : Vec3(mSwingTwistConstraintPart.GetTotalTwistLambda(), mSwingTwistConstraintPart.GetTotalSwingYLambda(), mSwingTwistConstraintPart.GetTotalSwingZLambda()); }
 	inline Vec3					GetTotalLambdaMotorTranslation() const						{ return Vec3(mMotorTranslationConstraintPart[0].GetTotalLambda(), mMotorTranslationConstraintPart[1].GetTotalLambda(), mMotorTranslationConstraintPart[2].GetTotalLambda()); }
 	inline Vec3					GetTotalLambdaMotorRotation() const							{ return Vec3(mMotorRotationConstraintPart[0].GetTotalLambda(), mMotorRotationConstraintPart[1].GetTotalLambda(), mMotorRotationConstraintPart[2].GetTotalLambda()); }

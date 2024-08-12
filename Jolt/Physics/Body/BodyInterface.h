@@ -84,10 +84,12 @@ public:
 	/// @param outBodies If not null on input, this will contain a list of body pointers corresponding to inBodyIDs that can be destroyed afterwards (caller assumes ownership over these).
 	void						UnassignBodyIDs(const BodyID *inBodyIDs, int inNumber, Body **outBodies);
 
-	/// Destroy a body
+	/// Destroy a body.
+	/// Make sure that you remove the body from the physics system using BodyInterface::RemoveBody before calling this function.
 	void						DestroyBody(const BodyID &inBodyID);
 
 	/// Destroy multiple bodies
+	/// Make sure that you remove the bodies from the physics system using BodyInterface::RemoveBody before calling this function.
 	void						DestroyBodies(const BodyID *inBodyIDs, int inNumber);
 
 	/// Add body to the physics system.
@@ -130,6 +132,7 @@ public:
 	void						DeactivateBody(const BodyID &inBodyID);
 	void						DeactivateBodies(const BodyID *inBodyIDs, int inNumber);
 	bool						IsActive(const BodyID &inBodyID) const;
+	void						ResetSleepTimer(const BodyID &inBodyID);
 	///@}
 
 	/// Create a two body constraint
@@ -200,10 +203,10 @@ public:
 
 	///@name Add forces to the body
 	///@{
-	void						AddForce(const BodyID &inBodyID, Vec3Arg inForce); ///< See Body::AddForce
-	void						AddForce(const BodyID &inBodyID, Vec3Arg inForce, RVec3Arg inPoint); ///< Applied at inPoint
-	void						AddTorque(const BodyID &inBodyID, Vec3Arg inTorque); ///< See Body::AddTorque
-	void						AddForceAndTorque(const BodyID &inBodyID, Vec3Arg inForce, Vec3Arg inTorque); ///< A combination of Body::AddForce and Body::AddTorque
+	void						AddForce(const BodyID &inBodyID, Vec3Arg inForce, EActivation inActivationMode = EActivation::Activate); ///< See Body::AddForce
+	void						AddForce(const BodyID &inBodyID, Vec3Arg inForce, RVec3Arg inPoint, EActivation inActivationMode = EActivation::Activate); ///< Applied at inPoint
+	void						AddTorque(const BodyID &inBodyID, Vec3Arg inTorque, EActivation inActivationMode = EActivation::Activate); ///< See Body::AddTorque
+	void						AddForceAndTorque(const BodyID &inBodyID, Vec3Arg inForce, Vec3Arg inTorque, EActivation inActivationMode = EActivation::Activate); ///< A combination of Body::AddForce and Body::AddTorque
 	///@}
 
 	///@name Add an impulse to the body
@@ -211,6 +214,7 @@ public:
 	void						AddImpulse(const BodyID &inBodyID, Vec3Arg inImpulse); ///< Applied at center of mass
 	void						AddImpulse(const BodyID &inBodyID, Vec3Arg inImpulse, RVec3Arg inPoint); ///< Applied at inPoint
 	void						AddAngularImpulse(const BodyID &inBodyID, Vec3Arg inAngularImpulse);
+	bool						ApplyBuoyancyImpulse(const BodyID &inBodyID, RVec3Arg inSurfacePosition, Vec3Arg inSurfaceNormal, float inBuoyancy, float inLinearDrag, float inAngularDrag, Vec3Arg inFluidVelocity, Vec3Arg inGravity, float inDeltaTime);
 	///@}
 
 	///@name Body type
@@ -273,6 +277,9 @@ public:
 	void SetCollisionGroup(const BodyID& inBodyID, JPH::CollisionGroup inGroup);
 
 private:
+	/// Helper function to activate a single body
+	JPH_INLINE void				ActivateBodyInternal(Body &ioBody) const;
+
 	BodyLockInterface *			mBodyLockInterface = nullptr;
 	BodyManager *				mBodyManager = nullptr;
 	BroadPhase *				mBroadPhase = nullptr;

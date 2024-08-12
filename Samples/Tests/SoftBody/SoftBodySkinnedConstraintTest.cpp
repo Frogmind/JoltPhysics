@@ -10,6 +10,7 @@
 #include <Utils/SoftBodyCreator.h>
 #include <Layers.h>
 #include <Renderer/DebugRendererImp.h>
+#include <Application/DebugUI.h>
 
 JPH_IMPLEMENT_RTTI_VIRTUAL(SoftBodySkinnedConstraintTest)
 {
@@ -49,7 +50,10 @@ void SoftBodySkinnedConstraintTest::SkinVertices(bool inHardSkinAll)
 		m = offset * m;
 
 	SoftBodyMotionProperties *mp = static_cast<SoftBodyMotionProperties *>(mBody->GetMotionProperties());
-	mp->SkinVertices(com, pose.data(), cNumJoints, inHardSkinAll, *mTempAllocator);
+	mp->SetEnableSkinConstraints(sEnableSkinConstraints);
+	mp->SetSkinnedMaxDistanceMultiplier(sMaxDistanceMultiplier);
+	if (sUpdateSkinning || inHardSkinAll)
+		mp->SkinVertices(com, pose.data(), cNumJoints, inHardSkinAll, *mTempAllocator);
 }
 
 void SoftBodySkinnedConstraintTest::Initialize()
@@ -121,6 +125,10 @@ void SoftBodySkinnedConstraintTest::Initialize()
 	// Calculate the information needed for skinned constraints
 	settings->CalculateSkinnedConstraintNormals();
 
+	// Optimize the settings (note that this is the second time we call this, the first time was in SoftBodyCreator::CreateCloth,
+	// this is a bit wasteful but we must do it because we added more constraints)
+	settings->Optimize();
+
 	// Create the body
 	SoftBodyCreationSettings cloth(settings, body_translation, Quat::sIdentity(), Layers::MOVING);
 	mBody = mBodyInterface->CreateSoftBody(cloth);
@@ -141,7 +149,7 @@ void SoftBodySkinnedConstraintTest::PrePhysicsUpdate(const PreUpdateParams &inPa
 	}
 
 	// Update time
-	mTime += inParams.mDeltaTime;
+	mTime += sTimeScale * inParams.mDeltaTime;
 
 	// Calculate skinned vertices but do not hard skin them
 	SkinVertices(false);
@@ -155,4 +163,12 @@ void SoftBodySkinnedConstraintTest::SaveState(StateRecorder &inStream) const
 void SoftBodySkinnedConstraintTest::RestoreState(StateRecorder &inStream)
 {
 	inStream.Read(mTime);
+}
+
+void SoftBodySkinnedConstraintTest::CreateSettingsMenu(DebugUI *inUI, UIElement *inSubMenu)
+{
+	inUI->CreateSlider(inSubMenu, "Time Scale", sTimeScale, 0.0f, 10.0f, 0.1f, [](float inValue) { sTimeScale = inValue; });
+	inUI->CreateCheckBox(inSubMenu, "Update Skinning", sUpdateSkinning, [](UICheckBox::EState inState) { sUpdateSkinning = inState == UICheckBox::STATE_CHECKED; });
+	inUI->CreateCheckBox(inSubMenu, "Enable Skin Constraints", sEnableSkinConstraints, [](UICheckBox::EState inState) { sEnableSkinConstraints = inState == UICheckBox::STATE_CHECKED; });
+	inUI->CreateSlider(inSubMenu, "Max Distance Multiplier", sMaxDistanceMultiplier, 0.0f, 10.0f, 0.1f, [](float inValue) { sMaxDistanceMultiplier = inValue; });
 }

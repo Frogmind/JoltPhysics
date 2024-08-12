@@ -19,7 +19,18 @@ Moving bodies have a [MotionProperties](@ref MotionProperties) object that conta
 
 ## Creating Bodies {#creating-bodies}
 
-Bodies are inserted into the [PhysicsSystem](@ref PhysicsSystem) and interacted with through the [BodyInterface](@ref BodyInterface). 
+Bodies are inserted into the [PhysicsSystem](@ref PhysicsSystem) and interacted with through the [BodyInterface](@ref BodyInterface).
+
+The general life cycle of a body is:
+
+- BodyInterface::CreateBody - Construct a Body object and initialize it. You cannot use `new` to create a Body.
+- BodyInterface::AddBody - Add the body to the PhysicsSystem and make it participate in the simulation.
+- BodyInterface::RemoveBody - Remove it from the PhysicsSystem.
+- BodyInterface::DestroyBody - Deinitialize and destruct the Body. You cannot use `delete` to delete a Body. This function will not automatically remove the Body from the PhysicsSystem.
+
+The BodyInterface also contains functionality to add many bodies to the simulation at the same time. It is important to use these functions when inserting many Bodies, you get a performance penalty if you don't.
+
+You can call AddBody, RemoveBody, AddBody, RemoveBody to temporarily remove and later reinsert a body into the simulation.
 
 ## Multithreaded Access 
 
@@ -73,7 +84,7 @@ Each body has a shape attached that determines the collision volume. The followi
 * [ConvexHullShape](@ref ConvexHullShape) - A convex hull defined by a set of points.
 * [StaticCompoundShape](@ref StaticCompoundShape) - A shape containing other shapes. This shape is constructed once and cannot be changed afterwards. Child shapes are organized in a tree to speed up collision detection.
 * [MutableCompoundShape](@ref MutableCompoundShape) - A shape containing other shapes. This shape can be constructed/changed at runtime and trades construction time for runtime performance. Child shapes are organized in a list to make modification easy.
-* [MeshShape](@ref MeshShape) - A shape consisting of triangles. They are mostly used for static geometry but can be used for dynamic or kinematic objects as long as they don't collide with other mesh shapes or heightfield shapes.
+* [MeshShape](@ref MeshShape) - A shape consisting of triangles. They are mostly used for static geometry.
 * [HeightFieldShape](@ref HeightFieldShape) - A shape consisting of NxN points that define the height at each point, very suitable for representing hilly terrain. Any body that uses this shape needs to be static.
 
 Next to this there are a number of decorator shapes that change the behavior of their children:
@@ -81,6 +92,16 @@ Next to this there are a number of decorator shapes that change the behavior of 
 * [ScaledShape](@ref ScaledShape) - This shape can scale a child shape. Note that if a shape is rotated first and then scaled, you can introduce shearing which is not supported by the library.
 * [RotatedTranslatedShape](@ref RotatedTranslatedShape) - This shape can rotate and translate a child shape, it can e.g. be used to offset a sphere from the origin.
 * [OffsetCenterOfMassShape](@ref OffsetCenterOfMassShape) - This shape does not change its child shape but it does shift the calculated center of mass for that shape. It allows you to e.g. shift the center of mass of a vehicle down to improve its handling.
+
+### Dynamic Mesh Shapes {#dynamic-mesh-shapes}
+
+Meshes are usually static, but they can be made kinematic or dynamic provided that they don't collide with other mesh- or heightfield shapes (an assert will trigger when this happens and the collision will be ignored).
+
+Mesh shapes also cannot calculate their mass and inertia, so when you want a dynamic mesh, you need to provide these yourself by setting BodyCreationSettings::mOverrideMassProperties = EOverrideMassProperties::MassAndInertiaProvided and supplying the mass and inertia in BodyCreationSettings::mMassPropertiesOverride.
+
+An example can be found [here](https://github.com/jrouwe/JoltPhysics/blob/master/Samples/Tests/General/DynamicMeshTest.cpp).
+
+Note that you should try to avoid dynamic mesh shapes as they are fairly expensive to simulate. Also, mesh shapes don't have a clear inside/outside so a mesh is only considered to be colliding when one of its triangles intersect with the other object. This can result in objects getting stuck inside the mesh without knowing which way is out.
 
 ### Creating Shapes {#creating-shapes}
 
@@ -107,7 +128,7 @@ Creating a convex hull for example looks like:
 			... // Error handling
 	}
 
-Note that after you call Create, the shape is cached and ShapeSettings keeps a reference to your shape (see @ref memory-management). If you call Create again, the same shape will be returned regardless of what changed to the settings object.
+Note that after you call Create, the shape is cached and ShapeSettings keeps a reference to your shape (see @ref memory-management). If you call Create again, the same shape will be returned regardless of what changed to the settings object (unless you call [ClearCachedResult](@ref ShapeSettings::ClearCachedResult) to clear the cache).
 
 ### Saving Shapes {#saving-shapes}
 
@@ -201,6 +222,26 @@ will return a box of size 2x2x2 centered around the origin, so in order to get i
 
 Note that when you work with interface of [BroadPhaseQuery](@ref BroadPhaseQuery), [NarrowPhaseQuery](@ref NarrowPhaseQuery) or [TransformedShape](@ref TransformedShape) this transformation is done for you.
 
+### Scaling Shapes {#scaling-shapes}
+
+Shapes can be scaled using the [ScaledShape](@ref ScaledShape) class. You can scale a shape like:
+
+	JPH::RefConst<Shape> my_scaled_shape = new JPH::ScaledShape(my_non_scaled_shape, JPH::Vec3(x_scale, y_scale, z_scale));
+
+Not all scales are valid for every shape. Use Shape::IsValidScale to check if a scale is valid for a particular shape (the documentation for this function also lists the rules for all shape types).
+
+A safer way of scaling shapes is provided by the Shape::ScaleShape function:
+
+	JPH::Shape::ShapeResult my_scaled_shape = my_non_scaled_shape->ScaleShape(JPH::Vec3(x_scale, y_scale, z_scale));
+
+This function will check if a scale is valid for a particular shape and if a scale is not valid, it will produce the closest scale that is valid. 
+For example, if you scale a CompoundShape that has rotated sub shapes, a non-uniform scale would cause shearing. In that case the Shape::ScaleShape function will create a new compound shape and scale the sub shapes (losing the shear) rather than creating a ScaledShape around the entire CompoundShape.
+
+Updating scaling after a body is created is also possible, but should be done with care. Imagine a sphere in a pipe, scaling the sphere so that it becomes bigger than the pipe creates an impossible situation as there is no way to resolve the collision anymore. 
+Please take a look at the [DynamicScaledShape](https://github.com/jrouwe/JoltPhysics/blob/master/Samples/Tests/ScaledShapes/DynamicScaledShape.cpp) demo. The reason that no ScaledShape::SetScale function exists is to ensure thread safety when collision queries are being executed while shapes are modified.
+
+Note that there are many functions that take a scale in Jolt (e.g. CollisionDispatch::sCollideShapeVsShape), usually the shape is scaled relative to its center of mass. The Shape::ScaleShape function scales the shape relative to the origin of the shape.
+
 ### Creating Custom Shapes {#creating-custom-shapes}
 
 If the defined Shape classes are not sufficient, or if your application can make a more efficient implementation because it has specific domain knowledge, it is possible to create a custom collision shape:
@@ -276,7 +317,7 @@ The adjacent faces of the soft body will be used to calculate the normal of each
 Soft bodies are currently in development, please note the following:
 
 * Soft bodies can only collide with rigid bodies, collisions between soft bodies are not implemented yet.
-* AddForce/AddTorque/SetLinearVelocity/SetLinearVelocityClamped/SetAngularVelocity/SetAngularVelocityClamped/AddImpulse/AddAngularImpulse have no effect on soft bodies as the velocity is stored per particle rather than per body.
+* AddTorque/SetLinearVelocity/SetLinearVelocityClamped/SetAngularVelocity/SetAngularVelocityClamped/AddImpulse/AddAngularImpulse have no effect on soft bodies as the velocity is stored per particle rather than per body.
 * Buoyancy calculations have not been implemented yet.
 * Constraints cannot operate on soft bodies, set the inverse mass of a particle to zero and move it by setting a velocity to constrain a soft body to something else.
 * When calculating friction / restitution an empty SubShapeID will be passed to the ContactConstraintManager::CombineFunction because this is called once per body pair rather than once per sub shape as is common for rigid bodies.
@@ -349,6 +390,22 @@ Because Jolt Physics uses a Symplectic Euler integrator, there will still be a s
 Constraints can be turned on / off by calling Constraint::SetEnabled. After every simulation step, check the total 'lambda' applied on each constraint and disable the constraint if the value goes over a certain threshold. Use e.g. SliderConstraint::GetTotalLambdaPosition / HingeConstraint::GetTotalLambdaRotation. You can see 'lambda' as the linear/angular impulse applied at the constraint in the last physics step to keep the constraint together.
 
 # Collision Detection {#collision-detection}
+
+Collision detection can be performed through various interfaces:
+
+* Coarse collision detection against the world, using only the bounding box of each body is done through the BroadPhaseQuery interface (see PhysicsSystem::GetBroadPhaseQuery).
+* Detailed collision detection against the world is done through NarrowPhaseQuery interface (see PhysicsSystem::GetNarrowPhaseQuery).
+* Checking collisions with a single body is done through TransformedShape (see Body::GetTransformedShape)
+* Checking collisions against a single shape is done through various interfaces on the Shape class (see e.g. Shape::CastRay) or through the CollisionDispatch interface.
+
+The most common collision tests are:
+
+* Casting a ray: BroadPhaseQuery::CastRay, NarrowPhaseQuery::CastRay, TransformedShape::CastRay, Shape::CastRay.
+* Colliding a shape (e.g. a sphere) in a static position: NarrowPhaseQuery::CollideShape, TransformedShape::CollideShape, CollisionDispatch::sCollideShapeVsShape.
+* Casting a shape (sweeping it from a start to an end position and finding collisions along the way): NarrowPhaseQuery::CastShape, TransformedShape::CastShape, CollisionDispatch::sCastShapeVsShapeWorldSpace.
+* Checking if a shape contains a point: BroadPhaseQuery::CollidePoint, NarrowPhaseQuery::CollidePoint, TransformedShape::CollidePoint, Shape::CollidePoint.
+
+The following sections describe the collision detection system in more detail.
 
 ## Broad Phase {#broad-phase}
 
@@ -464,6 +521,8 @@ The [Character](@ref Character) and [CharacterVirtual](@ref CharacterVirtual) cl
 
 The Character class is the simplest controller and is essentially a rigid body that has been configured to only allow translation (and no rotation so it stays upright). It is simulated together with the other rigid bodies so it properly reacts to them. Because it is simulated, it is usually not the best solution for a player as the player usually requires a lot of behavior that is non-physical. This character controller is cheap so it is recommended for e.g. simple AI characters. After every PhysicsSystem::Update call you must call Character::PostSimulation to update the ground contacts.
 
+Characters are usually driven in a kinematic way (i.e. by calling Character::SetLinearVelocity or CharacterVirtual::SetLinearVelocity before their update).
+
 The CharacterVirtual class is much more advanced. It is implemented using collision detection functionality only (through NarrowPhaseQuery) and is simulated when CharacterVirtual::Update is called. Since the character is not 'added' to the world, it is not visible to rigid bodies and it only interacts with them during the CharacterVirtual::Update function by applying impulses. This does mean there can be some update order artifacts, like the character slightly hovering above an elevator going down, because the characters moves at a different time than the other rigid bodies. Separating it has the benefit that the update can happen at the appropriate moment in the game code. Multiple CharacterVirtuals can update concurrently, so it is not an issue if the game code is parallelized.
 
 CharacterVirtual has the following extra functionality:
@@ -474,9 +533,13 @@ CharacterVirtual has the following extra functionality:
 * Sticking to the ground when walking down a slope through the CharacterVirtual::ExtendedUpdate call
 * Support for specifying a local coordinate system that allows e.g. [walking around in a flying space ship](https://github.com/jrouwe/JoltPhysics/blob/master/Samples/Tests/Character/CharacterSpaceShipTest.cpp) that is equipped with 'inertial dampers' (a sci-fi concept often used in games).
 
-If you want CharacterVirtual to have presence in the world, it is recommended to pair it with a slightly smaller [Kinematic](@ref EMotionType) body (or Character). After each update, move this body using BodyInterface::MoveKinematic to the new location. This ensures that standard collision tests like ray casts are able to find the character in the world and that fast moving objects with motion quality [LinearCast](@ref EMotionQuality) will not pass through the character in 1 update. As an alternative to a Kinematic body, you can also use a regular Dynamic body with a [gravity factor](@ref BodyCreationSettings::mGravityFactor) of 0. Ensure that the character only collides with dynamic objects in this case. The advantage of this approach is that the paired body doesn't have infinite mass so is less strong.
+CharacterVirtual should provide everything that Character provides. Since it is not a rigid body, it requires some extra consideration:
+* Collision callbacks are passed through the CharacterContactListener instead of the ContactListener class
+* CharacterVirtual vs sensor contacts are also passed through this listener, you will not receive them through the regular ContactListener
+* CharacterVirtual vs CharacterVirtual collisions can be handled through the CharacterVsCharacterCollision interface
+* Collision checks (e.g. CastRay) do not collide with CharacterVirtual. Use e.g. `NarrowPhaseQuery::CastRay(..., collector)` followed by `CharacterVirtual::GetTransformedShape().CastRay(..., collector)` to include the collision results.
 
-Characters are usually driven in a kinematic way (i.e. by calling Character::SetLinearVelocity or CharacterVirtual::SetLinearVelocity before their update).
+You can create a hybrid between these two by setting CharacterVirtualSettings::mInnerBodyShape. This will create an inner rigid body that follows the movement of the CharacterVirtual. This inner rigid body will be detected by sensors and regular collision tests.
 
 To get started take a look at the [Character](https://github.com/jrouwe/JoltPhysics/blob/master/Samples/Tests/Character/CharacterTest.cpp) and [CharacterVirtual](https://github.com/jrouwe/JoltPhysics/blob/master/Samples/Tests/Character/CharacterVirtualTest.cpp) examples.
 
@@ -521,12 +584,12 @@ Because of the minimal use of doubles, the simulation runs 5-10% slower in doubl
 
 The physics simulation is deterministic provided that:
 
-* The APIs that modify the simulation are called in exactly the same order. For example, bodies and constraints need to be added/removed/modified in exactly the same order so that the state at the beginning of a simulation step is exactly the same for both simulations.
+* The APIs that modify the simulation are called in exactly the same order. For example, bodies and constraints need to be added/removed/modified in exactly the same order so that the state at the beginning of a simulation step is exactly the same for both simulations ([exceptions](@ref sloppy-determinism)).
 * The same binary code is used to run the simulation. For example, when you run the simulation on Windows it doesn't matter if you have an AMD or Intel processor.
 
 If you want cross platform determinism then please turn on the CROSS_PLATFORM_DETERMINISTIC option in CMake. This will make the library approximately 8% slower but the simulation will be deterministic regardless of:
 
-* Compiler used to compile the library (tested MSVC2022 vs clang)
+* Compiler used to compile the library (tested MSVC2022, clang, gcc and emscripten)
 * Configuration (Debug, Release or Distribution)
 * OS (tested Windows, macOS, Linux)
 * Architecture (x86 or ARM).
@@ -540,9 +603,12 @@ It is quite difficult to verify cross platform determinism, so this feature is l
 
 * Windows MSVC x86 64-bit with AVX2
 * Windows MSVC x86 32-bit with SSE2
-* macOS clang x86 64-bit with AVX
+* macOS clang ARM 64-bit with NEON
 * Linux clang x86 64-bit with AVX2
 * Linux clang ARM 64-bit with NEON
+* Linux gcc x86 64-bit with AVX2
+* Linux gcc ARM 64-bit with NEON
+* WASM emscripten running in nodejs
 
 The most important things to look out for in your own application:
 
@@ -555,9 +621,18 @@ When running the Samples Application you can press ESC, Physics Settings and che
 
 # Rolling Back a Simulation {#rolling-back-a-simulation}
 
-When synchronizing two simulations via a network, it is possible that a change that needed to be applied at frame N is received at frame N + M. This will require rolling back the simulation to the state of frame N and repeating the simulation with the new inputs. This can be implemented by saving the physics state using [SaveState](@ref PhysicsSystem::SaveState) at every frame. To roll back, call [RestoreState](@ref PhysicsSystem::RestoreState) with the state at frame N. SaveState only records the state that the physics engine modifies during its update step (positions, velocities etc.), so if you change anything else you need to restore this yourself. E.g. if you did a [SetFriction](@ref Body::SetFriction) on frame N + 2 then, when rewinding, you need to restore the friction to what is was on frame N and update it again on frame N + 2 when you replay. If you start adding/removing objects (e.g. bodies or constraints) during these frames, the RestoreState function will not work. If you added a body on frame N + 1, you'll need to remove it when rewinding and then add it back on frame N + 1 again (with the proper initial position/velocity etc. because it won't be contained in the snapshot at frame N).
+When synchronizing two simulations via a network, it is possible that a change that needed to be applied at frame N is received at frame N + M. This will require rolling back the simulation to the state of frame N and repeating the simulation with the new inputs. This can be implemented by saving the physics state using [SaveState](@ref PhysicsSystem::SaveState) at every frame. To roll back, call [RestoreState](@ref PhysicsSystem::RestoreState) with the state at frame N. SaveState only records the state that the physics engine modifies during its update step (positions, velocities etc.), so if you change anything else you need to restore this yourself. E.g. if you did a [SetFriction](@ref Body::SetFriction) on frame N + 2 then, when rewinding, you need to restore the friction to what is was on frame N and update it again on frame N + 2 when you replay. If you start adding/removing objects (e.g. bodies or constraints) during these frames, the RestoreState function will not work. If you added a body on frame N + 1, you'll need to remove it when rewinding and then add it back on frame N + 1 again (with the proper initial position/velocity etc. because it won't be contained in the snapshot at frame N). The [SaveState](@ref PhysicsSystem::SaveState) function comes with a StateRecorderFilter interface that you can use to selectively save state. E.g. [ShouldSaveBody](@ref StateRecorderFilter::ShouldSaveBody) could simply return false for all static or inactive bodies which can be used to limit the size of the snapshot.
 
 If you wish to share saved state between server and client, you need to ensure that all APIs that modify the state of the world are called in the exact same order. So if the client creates physics objects for player 1 then 2 and the server creates the objects for 2 then 1 you already have a problem (the body IDs will be different, which will render the save state snapshots incompatible). When rolling back a simulation, you'll also need to ensure that the BodyIDs are kept the same, so you need to remove/add the body from/to the physics system instead of destroy/re-create them or you need to create bodies with the same ID on both sides using [BodyInterface::CreateBodyWithID](@ref BodyInterface::CreateBodyWithID).
+
+# Being Sloppy While Still Being Deterministic {#sloppy-determinism}
+
+If you do things in the same order it is guaranteed to be deterministic, but if you know what you're doing you can take some liberties.
+E.g. doing `BodyA.SetFriction(...); BodyB.SetFriction(...);` or `BodyB.SetFriction(...); BodyA.SetFriction(...);` doesn't matter for determinism,
+the main thing you need to ensure is that when you do a PhysicsSystem::Update that the binary state is the same.
+Also adding body A then B is the same as B then A as long as the BodyIDs of A and B are consistent.
+For constraints, adding A then B or B then A is equivalent as long as ConstraintSettings::mConstraintPriority is unique per constraint so that it defines a consistent ordering (in this case all constraints in the system must have a unique number).
+Note though that PhysicsSystem::SaveState relies on the ordering of constraints, so you'll have to skip serializing constraints by not setting EStateRecorderState::Constraints and call Constraint::SaveState / Constraint::RestoreState directly yourself.
 
 # Working With Multiple Physics Systems {#working-with-multiple-physics-systems}
 
@@ -577,7 +652,7 @@ These functions / systems need to be registered in advance.
 
 # Debug Rendering {#debug-rendering}
 
-When the define JPH_DEBUG_RENDERER is defined (which by default is defined in Debug and Release but not Distribution), Jolt is able to render its internal state. To integrate this into your own application you must inherit from the DebugRenderer class and implement the pure virtual functions DebugRenderer::DrawLine, DebugRenderer::DrawTriangle, DebugRenderer::CreateTriangleBatch, DebugRenderer::DrawGeometry and DebugRenderer::DrawText3D. The CreateTriangleBatch is used to prepare a batch of triangles to be drawn by a single DrawGeometry call, which means that Jolt can render a complex scene much more efficiently than when each triangle in that scene would have been drawn through DrawTriangle. At run-time create an instance of your DebugRenderer which will internally assign itself to DebugRenderer::sInstance. Finally call for example PhysicsSystem::DrawBodies or PhysicsSystem::DrawConstraints to draw the state of the simulation. For an example implementation see [the DebugRenderer from the Samples application](https://github.com/jrouwe/JoltPhysics/blob/master/TestFramework/Renderer/DebugRendererImp.h).
+When the define JPH_DEBUG_RENDERER is defined (which by default is defined in Debug and Release but not Distribution), Jolt is able to render its internal state. To integrate this into your own application you must inherit from the DebugRenderer class and implement the pure virtual functions DebugRenderer::DrawLine, DebugRenderer::DrawTriangle, DebugRenderer::CreateTriangleBatch, DebugRenderer::DrawGeometry and DebugRenderer::DrawText3D. The CreateTriangleBatch is used to prepare a batch of triangles to be drawn by a single DrawGeometry call, which means that Jolt can render a complex scene much more efficiently than when each triangle in that scene would have been drawn through DrawTriangle. At run-time create an instance of your DebugRenderer which will internally assign itself to DebugRenderer::sInstance. Finally call for example PhysicsSystem::DrawBodies or PhysicsSystem::DrawConstraints to draw the state of the simulation. For an example implementation see [the DebugRenderer from the Samples application](https://github.com/jrouwe/JoltPhysics/blob/master/TestFramework/Renderer/DebugRendererImp.h) or to get started quickly take a look at DebugRendererSimple.
 
 # Memory Management {#memory-management}
 

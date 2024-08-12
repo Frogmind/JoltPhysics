@@ -67,6 +67,7 @@ class alignas(JPH_RVECTOR_ALIGNMENT) JPH_EXPORT_GCC_BUG_WORKAROUND Body : public
 public:
 	JPH_OVERRIDE_NEW_DELETE
 
+<<<<<<< HEAD
 	/// Default constructor
 							Body() = default;
 
@@ -80,6 +81,8 @@ public:
 		mMotionProperties->ResetTorque();
 	}
 
+=======
+>>>>>>> b53b830ca8cd8dff1daffafefa2a6db8a514dfc4
 	/// Get the id of this body
 	inline const BodyID &	GetID() const													{ return mID; }
 
@@ -260,16 +263,16 @@ public:
 	/// Add force (unit: N) at center of mass for the next time step, will be reset after the next call to PhysicsSimulation::Update
 	inline void				AddForce(Vec3Arg inForce)										{ JPH_ASSERT(IsDynamic()); JPH_ASSERT(isfinite(mMotionProperties->mForce.x)); JPH_ASSERT(isfinite(mMotionProperties->mForce.y)); JPH_ASSERT(isfinite(mMotionProperties->mForce.z)); JPH_ASSERT(!inForce.IsNaN()); (Vec3::sLoadFloat3Unsafe(mMotionProperties->mForce) + inForce).StoreFloat3(&mMotionProperties->mForce); }
 
-	/// Add force (unit: N) at inPosition for the next time step, will be reset after the next call to PhysicsSimulation::Update
+	/// Add force (unit: N) at inPosition for the next time step, will be reset after the next call to PhysicsSystem::Update
 	inline void				AddForce(Vec3Arg inForce, RVec3Arg inPosition);
 
 	/// Add torque (unit: N m) for the next time step, will be reset after the next call to PhysicsSimulation::Update
 	inline void				AddTorque(Vec3Arg inTorque)										{ JPH_ASSERT(IsDynamic()); JPH_ASSERT(isfinite(mMotionProperties->mTorque.x)); JPH_ASSERT(isfinite(mMotionProperties->mTorque.y)); JPH_ASSERT(isfinite(mMotionProperties->mTorque.z)); JPH_ASSERT(!inTorque.IsNaN()); (Vec3::sLoadFloat3Unsafe(mMotionProperties->mTorque) + inTorque).StoreFloat3(&mMotionProperties->mTorque); }
 
-	// Get the total amount of force applied to the center of mass this time step (through AddForce calls). Note that it will reset to zero after PhysicsSimulation::Update.
+	// Get the total amount of force applied to the center of mass this time step (through AddForce calls). Note that it will reset to zero after PhysicsSystem::Update.
 	inline Vec3				GetAccumulatedForce() const										{ JPH_ASSERT(IsDynamic()); return mMotionProperties->GetAccumulatedForce(); }
 
-	// Get the total amount of torque applied to the center of mass this time step (through AddForce/AddTorque calls). Note that it will reset to zero after PhysicsSimulation::Update.
+	// Get the total amount of torque applied to the center of mass this time step (through AddForce/AddTorque calls). Note that it will reset to zero after PhysicsSystem::Update.
 	inline Vec3				GetAccumulatedTorque() const									{ JPH_ASSERT(IsDynamic()); return mMotionProperties->GetAccumulatedTorque(); }
 
 	// Reset the total accumulated force, not that this will be done automatically after every time step.
@@ -321,13 +324,13 @@ public:
 	inline RVec3			GetPosition() const												{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::Read)); return mPosition - mRotation * mShape->GetCenterOfMass(); }
 
 	/// World space rotation of the body
-	inline Quat 			GetRotation() const												{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::Read)); return mRotation; }
+	inline Quat				GetRotation() const												{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::Read)); return mRotation; }
 
 	/// Calculates the transform of this body
 	inline RMat44			GetWorldTransform() const;
 
 	/// Gets the world space position of this body's center of mass
-	inline RVec3 			GetCenterOfMassPosition() const									{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::Read)); return mPosition; }
+	inline RVec3			GetCenterOfMassPosition() const									{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::Read)); return mPosition; }
 
 	/// Calculates the transform for this body's center of mass
 	inline RMat44			GetCenterOfMassTransform() const;
@@ -374,7 +377,7 @@ public:
 
 	/// Update position using an Euler step (used during position integrate & constraint solving)
 	inline void				AddPositionStep(Vec3Arg inLinearVelocityTimesDeltaTime)			{ JPH_ASSERT(IsRigidBody()); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite)); mPosition += mMotionProperties->LockTranslation(inLinearVelocityTimesDeltaTime); JPH_ASSERT(!mPosition.IsNaN()); }
-	inline void				SubPositionStep(Vec3Arg inLinearVelocityTimesDeltaTime) 		{ JPH_ASSERT(IsRigidBody()); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite)); mPosition -= mMotionProperties->LockTranslation(inLinearVelocityTimesDeltaTime); JPH_ASSERT(!mPosition.IsNaN()); }
+	inline void				SubPositionStep(Vec3Arg inLinearVelocityTimesDeltaTime)			{ JPH_ASSERT(IsRigidBody()); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite)); mPosition -= mMotionProperties->LockTranslation(inLinearVelocityTimesDeltaTime); JPH_ASSERT(!mPosition.IsNaN()); }
 
 	inline void ClearTemporaryVelocities() {
 		mMotionProperties->ClearTemporaryVelocities();
@@ -441,8 +444,14 @@ public:
 
 private:
 	friend class BodyManager;
+	friend class BodyWithMotionProperties;
+	friend class SoftBodyWithMotionPropertiesAndShape;
+
+							Body() = default;												///< Bodies must be created through BodyInterface::CreateBody
 
 	explicit				Body(bool);														///< Alternative constructor that initializes all members
+
+							~Body()															{ JPH_ASSERT(mMotionProperties == nullptr); } ///< Bodies must be destroyed through BodyInterface::DestroyBody
 
 	inline void				GetSleepTestPoints(RVec3 *outPoints) const;						///< Determine points to test for checking if body is sleeping: COM, COM + largest bounding box axis, COM + second largest bounding box axis
 

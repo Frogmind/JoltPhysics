@@ -56,8 +56,9 @@ JobSystemThreadPool::JobSystemThreadPool(uint inMaxJobs, uint inMaxBarriers, int
 	Init(inMaxJobs, inMaxBarriers, inNumThreads);
 }
 
-void JobSystemThreadPool::StartThreads(int inNumThreads)
+void JobSystemThreadPool::StartThreads([[maybe_unused]] int inNumThreads)
 {
+#if !defined(JPH_CPU_WASM) || defined(__EMSCRIPTEN_PTHREADS__) // If we're running without threads support we cannot create threads and we ignore the inNumThreads parameter
 	// Auto detect number of threads
 	if (inNumThreads < 0)
 		inNumThreads = thread::hardware_concurrency() - 1;
@@ -79,6 +80,7 @@ void JobSystemThreadPool::StartThreads(int inNumThreads)
 	mThreads.reserve(inNumThreads);
 	for (int i = 0; i < inNumThreads; ++i)
 		mThreads.emplace_back([this, i] { ThreadMain(i); });
+#endif
 }
 
 JobSystemThreadPool::~JobSystemThreadPool()
@@ -330,6 +332,9 @@ void JobSystemThreadPool::ThreadMain(int inThreadIndex)
 
 	JPH_PROFILE_THREAD_START(name);
 
+	// Call the thread init function
+	mThreadInitFunction(inThreadIndex);
+
 	atomic<uint> &head = mHeads[inThreadIndex];
 
 	while (!mQuit)
@@ -359,6 +364,9 @@ void JobSystemThreadPool::ThreadMain(int inThreadIndex)
 			}
 		}
 	}
+
+	// Call the thread exit function
+	mThreadExitFunction(inThreadIndex);
 
 	JPH_PROFILE_THREAD_END();
 }
