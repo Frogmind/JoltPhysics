@@ -245,10 +245,9 @@ void SixDOFConstraint::SetRotationLimits(Vec3Arg inLimitMin, Vec3Arg inLimitMax)
 
 
 
-void SixDOFConstraint::SetRotationLimitsY(float rotationLimitsRadians) {
-	mLimitMin[EAxis::RotationY] = -std::abs(rotationLimitsRadians);
-	mLimitMax[EAxis::RotationY] = +std::abs(rotationLimitsRadians);
-	UpdateRotationLimits();
+void SixDOFConstraint::SetRotationLimitsY_hypehypeVisualsOnly(float min, float max) {
+	minAngleVisualization = min;
+	maxAngleVisualization = max;
 }
 
 void SixDOFConstraint::SetMaxFriction(EAxis inAxis, float inFriction)
@@ -409,15 +408,22 @@ void SixDOFConstraint::SetupVelocityConstraint(float inDeltaTime)
 			}
 			else if (!IsFreeAxis(axis))
 			{
-				// When constraint is limited, it is only active when outside of the allowed range
-				if (d <= mLimitMin[i])
-				{
-					constraint_value = d - mLimitMin[i];
-					constraint_active = true;
+				// for hypehype we only use 6dof for wheeljoint. the default interpretation here is not useful for us.
+				if constexpr (false) {
+					// When constraint is limited, it is only active when outside of the allowed range
+					if (d <= mLimitMin[i])
+					{
+						constraint_value = d - mLimitMin[i];
+						constraint_active = true;
+					}
+					else if (d >= mLimitMax[i])
+					{
+						constraint_value = d - mLimitMax[i];
+						constraint_active = true;
+					}
 				}
-				else if (d >= mLimitMax[i])
-				{
-					constraint_value = d - mLimitMax[i];
+				else {
+					constraint_value = d - (mLimitMin[i] + mLimitMax[i]) * 0.5f;
 					constraint_active = true;
 				}
 			}
@@ -585,19 +591,6 @@ void SixDOFConstraint::SetupVelocityConstraint(float inDeltaTime)
 			}
 		}
 	}
-}
-
-void SixDOFConstraint::ResetWarmStart()
-{
-	for (AxisConstraintPart &c : mMotorTranslationConstraintPart)
-		c.Deactivate();
-	for (AngleConstraintPart &c : mMotorRotationConstraintPart)
-		c.Deactivate();
-	mRotationConstraintPart.Deactivate();
-	mSwingTwistConstraintPart.Deactivate();
-	mPointConstraintPart.Deactivate();
-	for (AxisConstraintPart &c : mTranslationConstraintPart)
-		c.Deactivate();
 }
 
 void SixDOFConstraint::WarmStartVelocityConstraint(float inWarmStartImpulseRatio)
@@ -796,39 +789,42 @@ bool SixDOFConstraint::SolvePositionConstraint(float inDeltaTime, float inBaumga
 #ifdef JPH_DEBUG_RENDERER
 void SixDOFConstraint::DrawConstraint(DebugRenderer *inRenderer) const
 {
-	// Get constraint properties in world space
-	RVec3 position1 = mBody1->GetCenterOfMassTransform() * mLocalSpacePosition1;
-	Quat rotation1 = mBody1->GetRotation() * mConstraintToBody1;
-	Quat rotation2 = mBody2->GetRotation() * mConstraintToBody2;
+	// not relevant for hypehype use case
+	if constexpr (false) {
+		// Get constraint properties in world space
+		RVec3 position1 = mBody1->GetCenterOfMassTransform() * mLocalSpacePosition1;
+		Quat rotation1 = mBody1->GetRotation() * mConstraintToBody1;
+		Quat rotation2 = mBody2->GetRotation() * mConstraintToBody2;
 
-	// Draw constraint orientation
-	inRenderer->DrawCoordinateSystem(RMat44::sRotationTranslation(rotation1, position1), mDrawConstraintSize);
+		// Draw constraint orientation
+		inRenderer->DrawCoordinateSystem(RMat44::sRotationTranslation(rotation1, position1), mDrawConstraintSize);
 
-	if ((IsRotationConstrained() || mRotationPositionMotorActive != 0) && !IsRotationFullyConstrained())
-	{
-		// Draw current swing and twist
-		Quat q = GetRotationInConstraintSpace();
-		Quat q_swing, q_twist;
-		q.GetSwingTwist(q_swing, q_twist);
-		inRenderer->DrawLine(position1, position1 + mDrawConstraintSize * (rotation1 * q_twist).RotateAxisY(), Color::sWhite);
-		inRenderer->DrawLine(position1, position1 + mDrawConstraintSize * (rotation1 * q_swing).RotateAxisX(), Color::sWhite);
+		if ((IsRotationConstrained() || mRotationPositionMotorActive != 0) && !IsRotationFullyConstrained())
+		{
+			// Draw current swing and twist
+			Quat q = GetRotationInConstraintSpace();
+			Quat q_swing, q_twist;
+			q.GetSwingTwist(q_swing, q_twist);
+			inRenderer->DrawLine(position1, position1 + mDrawConstraintSize * (rotation1 * q_twist).RotateAxisY(), Color::sWhite);
+			inRenderer->DrawLine(position1, position1 + mDrawConstraintSize * (rotation1 * q_swing).RotateAxisX(), Color::sWhite);
+		}
+
+		// Draw target rotation
+		Quat m_swing, m_twist;
+		mTargetOrientation.GetSwingTwist(m_swing, m_twist);
+		if (mMotorState[EAxis::RotationX] == EMotorState::Position)
+			inRenderer->DrawLine(position1, position1 + mDrawConstraintSize * (rotation1 * m_twist).RotateAxisY(), Color::sYellow);
+		if (mMotorState[EAxis::RotationY] == EMotorState::Position || mMotorState[EAxis::RotationZ] == EMotorState::Position)
+			inRenderer->DrawLine(position1, position1 + mDrawConstraintSize * (rotation1 * m_swing).RotateAxisX(), Color::sYellow);
+
+		// Draw target angular velocity
+		Vec3 target_angular_velocity = Vec3::sZero();
+		for (int i = 0; i < 3; ++i)
+			if (mMotorState[EAxis::RotationX + i] == EMotorState::Velocity)
+				target_angular_velocity.SetComponent(i, mTargetAngularVelocity[i]);
+		if (target_angular_velocity != Vec3::sZero())
+			inRenderer->DrawArrow(position1, position1 + rotation2 * target_angular_velocity, Color::sRed, 0.1f);
 	}
-
-	// Draw target rotation
-	Quat m_swing, m_twist;
-	mTargetOrientation.GetSwingTwist(m_swing, m_twist);
-	if (mMotorState[EAxis::RotationX] == EMotorState::Position)
-		inRenderer->DrawLine(position1, position1 + mDrawConstraintSize * (rotation1 * m_twist).RotateAxisY(), Color::sYellow);
-	if (mMotorState[EAxis::RotationY] == EMotorState::Position || mMotorState[EAxis::RotationZ] == EMotorState::Position)
-		inRenderer->DrawLine(position1, position1 + mDrawConstraintSize * (rotation1 * m_swing).RotateAxisX(), Color::sYellow);
-
-	// Draw target angular velocity
-	Vec3 target_angular_velocity = Vec3::sZero();
-	for (int i = 0; i < 3; ++i)
-		if (mMotorState[EAxis::RotationX + i] == EMotorState::Velocity)
-			target_angular_velocity.SetComponent(i, mTargetAngularVelocity[i]);
-	if (target_angular_velocity != Vec3::sZero())
-		inRenderer->DrawArrow(position1, position1 + rotation2 * target_angular_velocity, Color::sRed, 0.1f);
 }
 
 void SixDOFConstraint::DrawConstraintLimits(DebugRenderer *inRenderer) const
@@ -836,12 +832,46 @@ void SixDOFConstraint::DrawConstraintLimits(DebugRenderer *inRenderer) const
 	// Get matrix that transforms from constraint space to world space
 	RMat44 constraint_body1_to_world = RMat44::sRotationTranslation(mBody1->GetRotation() * mConstraintToBody1, mBody1->GetCenterOfMassTransform() * mLocalSpacePosition1);
 
-	// Draw limits
-	if (mSwingTwistConstraintPart.GetSwingType() == ESwingType::Pyramid)
-		inRenderer->DrawSwingPyramidLimits(constraint_body1_to_world, mLimitMin[EAxis::RotationY], mLimitMax[EAxis::RotationY], mLimitMin[EAxis::RotationZ], mLimitMax[EAxis::RotationZ], mDrawConstraintSize, Color::sGreen, DebugRenderer::ECastShadow::Off);
-	else
-		inRenderer->DrawSwingConeLimits(constraint_body1_to_world, mLimitMax[EAxis::RotationY], mLimitMax[EAxis::RotationZ], mDrawConstraintSize, Color::sGreen, DebugRenderer::ECastShadow::Off);
-	inRenderer->DrawPie(constraint_body1_to_world.GetTranslation(), mDrawConstraintSize, constraint_body1_to_world.GetAxisX(), constraint_body1_to_world.GetAxisY(), mLimitMin[EAxis::RotationX], mLimitMax[EAxis::RotationX], Color::sPurple, DebugRenderer::ECastShadow::Off);
+	// jolt default visualization, not really useful for hypehype wheel joint visualization
+	if constexpr (false) {
+		// Draw limits
+		if (mSwingTwistConstraintPart.GetSwingType() == ESwingType::Pyramid)
+			inRenderer->DrawSwingPyramidLimits(constraint_body1_to_world, mLimitMin[EAxis::RotationY], mLimitMax[EAxis::RotationY], mLimitMin[EAxis::RotationZ], mLimitMax[EAxis::RotationZ], mDrawConstraintSize, Color::sGreen, DebugRenderer::ECastShadow::Off);
+		else
+			inRenderer->DrawSwingConeLimits(constraint_body1_to_world, mLimitMax[EAxis::RotationY], mLimitMax[EAxis::RotationZ], mDrawConstraintSize, Color::sGreen, DebugRenderer::ECastShadow::Off);
+		inRenderer->DrawPie(constraint_body1_to_world.GetTranslation(), mDrawConstraintSize, constraint_body1_to_world.GetAxisX(), constraint_body1_to_world.GetAxisY(), mLimitMin[EAxis::RotationX], mLimitMax[EAxis::RotationX], Color::sPurple, DebugRenderer::ECastShadow::Off);
+	}
+	else {
+		// draw wheel rolling pie (full circle)
+		inRenderer->DrawPie(
+			constraint_body1_to_world.GetTranslation(),
+			mDrawConstraintSize * 1.0f,
+			constraint_body1_to_world.GetAxisX(),
+			constraint_body1_to_world.GetAxisY(),
+			mLimitMin[EAxis::RotationX],
+			mLimitMax[EAxis::RotationX],
+			Color::sGreen,
+			DebugRenderer::ECastShadow::Off);
+
+		// draw wheel turning pie.
+		inRenderer->DrawPie(
+			constraint_body1_to_world.GetTranslation(),
+			mDrawConstraintSize * 1.0f,
+			constraint_body1_to_world.GetAxisY(),
+			-constraint_body1_to_world.GetAxisZ(),
+			minAngleVisualization,
+			maxAngleVisualization,
+			Color::sYellow,
+			DebugRenderer::ECastShadow::Off);
+
+		// draw suspension direction if suspension is enabled
+		if (mLimitsSpringSettings[EAxis::TranslationY].mStiffness > 0.0f) {
+			inRenderer->DrawArrow(
+				constraint_body1_to_world.GetTranslation(),
+				constraint_body1_to_world.GetTranslation() + constraint_body1_to_world.GetAxisY() * 2,
+				Color::sOrange, mDrawConstraintSize * 0.15f);
+		}
+	}
 }
 #endif // JPH_DEBUG_RENDERER
 

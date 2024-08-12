@@ -230,6 +230,8 @@ public:
 	inline Vec3				GetTemporaryVelocity() const									{ return !IsStatic()? mMotionProperties->GetTemporaryVelocity() : Vec3::sZero(); }	
 	inline Vec3				GetTemporaryAngularVelocity() const 							{ return !IsStatic()? mMotionProperties->GetTemporaryAngularVelocity() : Vec3::sZero(); }
 
+	inline Vec3				GetSurfaceVelocity() const { JPH_ASSERT(mMotionProperties); return GetRotation() * mMotionProperties->GetSurfaceVelocity(); }
+	void					SetSurfaceVelocity(Vec3Arg inSurfaceVelocity) { JPH_ASSERT(mMotionProperties); mMotionProperties->SetSurfaceVelocity(inSurfaceVelocity); }
 
 	/// Get world space linear velocity of the center of mass (unit: m/s)
 	inline Vec3				GetLinearVelocity() const										{ return !IsStatic()? mMotionProperties->GetLinearVelocity() : Vec3::sZero(); }
@@ -425,6 +427,18 @@ public:
 
 	explicit				Body(bool, bool); // hehe even more alternative. difference is we allow motion properties. used for dummy bodies in drag joints to allow for nicer velocity updates.
 
+	bool IsForceUpdateVisualFromPhysical() {
+		return (mFlags.load(memory_order_relaxed) & uint8(EFlags::ForceUpdateVisualFromPhysical)) != 0;
+	}
+
+	void SetForceUpdateVisualFromPhysical() {
+		mFlags.fetch_or(uint8(EFlags::ForceUpdateVisualFromPhysical), memory_order_relaxed);
+	}
+
+	void ClearForceUpdateVisualFromPhysical() {
+		mFlags.fetch_and(uint8(~uint8(EFlags::ForceUpdateVisualFromPhysical)), memory_order_relaxed);
+	}
+
 private:
 	friend class BodyManager;
 
@@ -441,6 +455,7 @@ private:
 		UseManifoldReduction			= 1 << 4,											///< Set this bit to indicate that this body can use manifold reduction (if PhysicsSettings::mUseManifoldReduction is true)
 		ApplyGyroscopicForce			= 1 << 5,											///< Set this bit to indicate that the gyroscopic force should be applied to this body (aka Dzhanibekov effect, see https://en.wikipedia.org/wiki/Tennis_racket_theorem)
 		EnhancedInternalEdgeRemoval		= 1 << 6,											///< Set this bit to indicate that enhanced internal edge removal should be used for this body (see BodyCreationSettings::mEnhancedInternalEdgeRemoval)
+		ForceUpdateVisualFromPhysical	= 1 << 7,											///< (Hypehype horror hack) Set this bit to indicate that the visual transform should be updated from the physical transform.
 	};
 
 	// 16 byte aligned

@@ -35,6 +35,9 @@ public:
 										DebugRenderer();
 	virtual								~DebugRenderer();
 
+	// We can have multiple "debugrenderer" instances for different purposes of physical collision shape visitings
+	void								SetAsSingletonInstance();
+
 	/// Remove unused generated meshes, mark all remaining meshes as unused
 	void								RunGarbageCollection();
 

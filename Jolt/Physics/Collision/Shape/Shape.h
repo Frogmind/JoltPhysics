@@ -194,7 +194,9 @@ public:
 
 	/// User data (to be used freely by the application)
 	uint64							GetUserData() const													{ return mUserData; }
-	void							SetUserData(uint64 inUserData)										{ mUserData = inUserData; }
+	void							SetUserData(uint64 inUserData)										{
+		mUserData = inUserData;
+	}
 
 	/// User index
 	uint8 GetUserIndex() const { return mUserIndex; }

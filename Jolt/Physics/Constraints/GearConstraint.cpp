@@ -82,11 +82,6 @@ void GearConstraint::SetupVelocityConstraint(float inDeltaTime)
 	CalculateConstraintProperties(rotation1, rotation2);
 }
 
-void GearConstraint::ResetWarmStart()
-{
-	mGearConstraintPart.Deactivate();
-}
-
 void GearConstraint::WarmStartVelocityConstraint(float inWarmStartImpulseRatio)
 {
 	// Warm starting: Apply previous frame impulse

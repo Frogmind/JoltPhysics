@@ -72,14 +72,17 @@ DebugRenderer::Triangle::Triangle(Vec3Arg inV1, Vec3Arg inV2, Vec3Arg inV3,
 }
 
 DebugRenderer::DebugRenderer() {
-  // Store singleton
-  JPH_ASSERT(sInstance == nullptr);
-  sInstance = this;
 }
 
 DebugRenderer::~DebugRenderer() {
-  JPH_ASSERT(sInstance == this);
-  sInstance = nullptr;
+	if (sInstance == this) {
+		sInstance = nullptr;
+	}
+}
+
+void DebugRenderer::SetAsSingletonInstance() {
+	JPH_ASSERT(sInstance == nullptr);
+	sInstance = this;
 }
 
 void DebugRenderer::DrawWireBox(const AABox &inBox, ColorArg inColor) {

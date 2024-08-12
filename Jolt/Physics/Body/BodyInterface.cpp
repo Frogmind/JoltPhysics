@@ -999,4 +999,20 @@ void BodyInterface::InvalidateContactCache(const BodyID &inBodyID)
 		mBodyManager->InvalidateContactCacheForBody(lock.GetBody());
 }
 
+JPH::CollisionGroup BodyInterface::GetCollisionGroup(const BodyID& inBodyID)
+{
+	BodyLockWrite lock(*mBodyLockInterface, inBodyID);
+	if (lock.Succeeded())
+		return lock.GetBody().GetCollisionGroup();
+	return {};
+}
+
+void BodyInterface::SetCollisionGroup(const BodyID &inBodyID, JPH::CollisionGroup inGroup)
+{
+	BodyLockWrite lock(*mBodyLockInterface, inBodyID);
+	if (lock.Succeeded())
+		lock.GetBody().SetCollisionGroup(inGroup);
+}
+
+
 JPH_NAMESPACE_END

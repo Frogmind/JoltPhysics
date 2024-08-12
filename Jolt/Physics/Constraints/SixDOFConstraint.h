@@ -117,7 +117,6 @@ public:
 	virtual EConstraintSubType	GetSubType() const override									{ return EConstraintSubType::SixDOF; }
 	virtual void				NotifyShapeChanged(const BodyID &inBodyID, Vec3Arg inDeltaCOM) override;
 	virtual void				SetupVelocityConstraint(float inDeltaTime) override;
-	virtual void				ResetWarmStart() override;
 	virtual void				WarmStartVelocityConstraint(float inWarmStartImpulseRatio) override;
 	virtual bool				SolveVelocityConstraint(float inDeltaTime) override;
 	virtual bool				SolvePositionConstraint(float inDeltaTime, float inBaumgarte) override;
@@ -139,8 +138,8 @@ public:
 
 	/// Update the rotational limits for this constraint
 	void						SetRotationLimits(Vec3Arg inLimitMin, Vec3Arg inLimitMax);
-	void						SetRotationLimitsY(float rotationLimitsRadians);
-
+	void						SetRotationLimitsY_hypehypeVisualsOnly(float min, float max);
+	
 	/// Get constraint Limits
 	float						GetLimitsMin(EAxis inAxis) const							{ return mLimitMin[inAxis]; }
 	float						GetLimitsMax(EAxis inAxis) const							{ return mLimitMax[inAxis]; }
@@ -271,7 +270,6 @@ private:
 	Quat						mTargetOrientation = Quat::sIdentity();
 
 	// RUN TIME PROPERTIES FOLLOW
-
 	// Constraint space axis in world space
 	Vec3						mTranslationAxis[3];
 	Vec3						mRotationAxis[3];
@@ -290,6 +288,11 @@ private:
 	// Motor or friction constraints
 	AxisConstraintPart			mMotorTranslationConstraintPart[3];
 	AngleConstraintPart			mMotorRotationConstraintPart[3];
+
+	// for hypehype visualization purposes only.
+	float minAngleVisualization;
+	float maxAngleVisualization;
+
 };
 
 JPH_NAMESPACE_END

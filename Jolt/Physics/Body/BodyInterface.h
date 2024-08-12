@@ -11,6 +11,7 @@
 #include <Jolt/Physics/Body/MotionQuality.h>
 #include <Jolt/Physics/Body/BodyType.h>
 #include <Jolt/Core/Reference.h>
+#include <Jolt/Physics/Collision/CollisionGroup.h>
 
 JPH_NAMESPACE_BEGIN
 
@@ -268,6 +269,8 @@ public:
 
 	/// Set the Body::EFlags::InvalidateContactCache flag for the specified body. This means that the collision cache is invalid for any body pair involving that body until the next physics step.
 	void						InvalidateContactCache(const BodyID &inBodyID);
+	JPH::CollisionGroup GetCollisionGroup(const BodyID& inBodyID);
+	void SetCollisionGroup(const BodyID& inBodyID, JPH::CollisionGroup inGroup);
 
 private:
 	BodyLockInterface *			mBodyLockInterface = nullptr;

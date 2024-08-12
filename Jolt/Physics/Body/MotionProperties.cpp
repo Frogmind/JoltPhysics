@@ -27,7 +27,7 @@ void MotionProperties::SetMassProperties(EAllowedDOFs inAllowedDOFs, const MassP
 	uint allowed_rotation_axis = (uint(inAllowedDOFs) >> 3) & 0b111;
 
 	// Set inverse mass
-	if (allowed_translation_axis == 0)
+	if (false && allowed_translation_axis == 0)
 	{
 		// No translation possible
 		mInvMass = 0.0f;
@@ -38,7 +38,7 @@ void MotionProperties::SetMassProperties(EAllowedDOFs inAllowedDOFs, const MassP
 		mInvMass = 1.0f / inMassProperties.mMass;
 	}
 
-	if (allowed_rotation_axis == 0)
+	if (false && allowed_rotation_axis == 0)
 	{
 		// No rotation possible
 		mInvInertiaDiagonal = Vec3::sZero();
@@ -52,6 +52,7 @@ void MotionProperties::SetMassProperties(EAllowedDOFs inAllowedDOFs, const MassP
 		if (inMassProperties.DecomposePrincipalMomentsOfInertia(rotation, diagonal)
 			&& !diagonal.IsNearZero())
 		{
+			diagonal = JPH::Vec3::sFixW(diagonal.mValue);
 			mInvInertiaDiagonal = diagonal.Reciprocal();
 			mInertiaRotation = rotation.GetQuaternion();
 		}

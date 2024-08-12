@@ -25,7 +25,7 @@ void Vec3::CheckW() const
 
 JPH_INLINE Vec3::Type Vec3::sFixW(Type inValue)
 {
-#ifdef JPH_FLOATING_POINT_EXCEPTIONS_ENABLED
+#if 1 || defined(JPH_FLOATING_POINT_EXCEPTIONS_ENABLED)
 	#if defined(JPH_USE_SSE)
 		return _mm_shuffle_ps(inValue, inValue, _MM_SHUFFLE(2, 2, 1, 0));
 	#elif defined(JPH_USE_NEON)

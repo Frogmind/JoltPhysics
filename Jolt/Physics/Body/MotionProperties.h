@@ -39,7 +39,10 @@ public:
 	}
 
 	inline Vec3				GetTemporaryVelocity() const { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::Read)); return mTemporaryVelocity; }
+	inline Vec3				GetSurfaceVelocity() const { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::Read)); return mSurfaceVelocity; }
 	inline Vec3				GetTemporaryAngularVelocity() const { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::Read)); return mTemporaryAngularVelocity; }		
+
+	void					SetSurfaceVelocity(Vec3Arg inSurfaceVelocity) { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); mSurfaceVelocity = inSurfaceVelocity; }
 
 	void					AddTemporaryVelocity(Vec3Arg inLinearVelocity) { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); mTemporaryVelocity += inLinearVelocity; }
 	void					AddTemporaryAngularVelocity(Vec3Arg inAngularVelocity) { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); mTemporaryAngularVelocity += inAngularVelocity; }
@@ -157,7 +160,7 @@ public:
 	/// Note that mass and inertia are linearly related (e.g. inertia of a sphere with mass m and radius r is \f$2/5 \: m \: r^2\f$).
 	/// If you change inertia, mass should probably change as well. See MassProperties::ScaleToMass.
 	/// If all your rotation degrees of freedom are restricted, make sure this is zero (see EAllowedDOFs).
-	void					SetInverseInertia(Vec3Arg inDiagonal, QuatArg inRot)			{ mInvInertiaDiagonal = inDiagonal; mInertiaRotation = inRot; }
+	void					SetInverseInertia(Vec3Arg inDiagonal, QuatArg inRot)			{ mInvInertiaDiagonal = Vec3::sFixW(inDiagonal.mValue); mInertiaRotation = inRot; }
 
 	/// Get inverse inertia matrix (\f$I_{body}^{-1}\f$). Will be a matrix of zeros for a static or kinematic object.
 	inline Mat44 			GetLocalSpaceInverseInertia() const;
@@ -204,6 +207,14 @@ public:
 		JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite));
 		mLinearVelocity = mAngularVelocity = Vec3::sZero();
 		mForce = mTorque = Float3(0, 0, 0);
+	}
+
+	JPH_INLINE void			ResetMotionLockedAxes()
+	{
+		mLinearVelocity = LockTranslation(mLinearVelocity);
+		mAngularVelocity = LockAngular(mAngularVelocity);
+		MultiplyAccumulatedForce(Vec3::sAnd({ 1.0f, 1.0f, 1.0f }, Vec3(GetLinearDOFsMask().ReinterpretAsFloat())));
+		MultiplyAccumulatedTorque(Vec3::sAnd({ 1.0f, 1.0f, 1.0f },  Vec3(GetAngularDOFsMask().ReinterpretAsFloat())));
 	}
 
 	/// Returns a vector where the linear components that are not allowed by mAllowedDOFs are set to 0 and the rest to 0xffffffff
@@ -284,6 +295,9 @@ public:
 	/// Restoring state for replay
 	void					RestoreState(StateRecorder &inStream);
 
+	void PreventSleep() { ++mNumSleepPrevents; mAllowSleeping = false; }
+	void ReleaseSleep() { mAllowSleeping = (--mNumSleepPrevents == 0); ResetSleepTestTimer(); }
+
 	static constexpr uint32	cInactiveIndex = uint32(-1);									///< Constant indicating that body is not active
 
 private:
@@ -298,6 +312,9 @@ private:
 	Vec3					mTemporaryAngularVelocity { Vec3::sZero() };					///< Temporary velocity applied only for single frame. Used to accomodate movement applied outside of physics system.
 	Vec3					mInvInertiaDiagonal;											///< Diagonal of inverse inertia matrix: D
 	Quat					mInertiaRotation;												///< Rotation (R) that takes inverse inertia diagonal to local space: Ibody^-1 = R * D * R^-1
+
+	Vec3					mSurfaceVelocity { Vec3::sZero() };												///< Additional surface velocity in local space
+
 
 	// 2nd cache line
 	// 4 byte aligned
@@ -318,6 +335,7 @@ private:
 	EAllowedDOFs			mAllowedDOFs = EAllowedDOFs::All;								///< Allowed degrees of freedom for this body
 	uint8					mNumVelocityStepsOverride = 0;									///< Used only when this body is dynamic and colliding. Override for the number of solver velocity iterations to run, 0 means use the default in PhysicsSettings::mNumVelocitySteps. The number of iterations to use is the max of all contacts and constraints in the island.
 	uint8					mNumPositionStepsOverride = 0;									///< Used only when this body is dynamic and colliding. Override for the number of solver position iterations to run, 0 means use the default in PhysicsSettings::mNumPositionSteps. The number of iterations to use is the max of all contacts and constraints in the island.
+	uint8					mNumSleepPrevents = 0;
 
 	// 3rd cache line (least frequently used)
 	// 4 byte aligned (or 8 byte if running in double precision)

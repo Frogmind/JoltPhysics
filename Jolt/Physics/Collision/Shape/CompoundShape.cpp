@@ -305,11 +305,16 @@ void CompoundShape::SaveBinaryState(StreamOut &inStream) const
 	inStream.Write(mInnerRadius);
 
 	// Write sub shapes
-	inStream.Write(mSubShapes, [](const SubShape &inElement, StreamOut &inS) {
-		inS.Write(inElement.mUserData);
-		inS.Write(inElement.mPositionCOM);
-		inS.Write(inElement.mRotation);
-	});
+	size_t len = mSubShapes.size();
+	inStream.Write(len);
+	if (!inStream.IsFailed())
+		for (size_t i = 0; i < len; ++i)
+		{
+			const SubShape &s = mSubShapes[i];
+			inStream.Write(s.mUserData);
+			inStream.Write(s.mPositionCOM);
+			inStream.Write(s.mRotation);
+		}
 }
 
 void CompoundShape::RestoreBinaryState(StreamIn &inStream)
@@ -322,12 +327,20 @@ void CompoundShape::RestoreBinaryState(StreamIn &inStream)
 	inStream.Read(mInnerRadius);
 
 	// Read sub shapes
-	inStream.Read(mSubShapes, [](StreamIn &inS, SubShape &outElement) {
-		inS.Read(outElement.mUserData);
-		inS.Read(outElement.mPositionCOM);
-		inS.Read(outElement.mRotation);
-		outElement.mIsRotationIdentity = outElement.mRotation == Float3(0, 0, 0);
-	});
+	size_t len = 0;
+	inStream.Read(len);
+	if (!inStream.IsEOF() && !inStream.IsFailed())
+	{
+		mSubShapes.resize(len);
+		for (size_t i = 0; i < len; ++i)
+		{
+			SubShape &s = mSubShapes[i];
+			inStream.Read(s.mUserData);
+			inStream.Read(s.mPositionCOM);
+			inStream.Read(s.mRotation);
+			s.mIsRotationIdentity = s.mRotation == Float3(0, 0, 0);
+		}
+	}
 }
 
 void CompoundShape::SaveSubShapeState(ShapeList &outSubShapes) const

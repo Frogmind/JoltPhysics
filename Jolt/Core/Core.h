@@ -181,11 +181,7 @@
 	#define JPH_CPU_ADDRESS_BITS 32
 	#define JPH_VECTOR_ALIGNMENT 16
 	#define JPH_DVECTOR_ALIGNMENT 32
-	#ifdef __wasm_simd128__
-		#define JPH_USE_SSE
-		#define JPH_USE_SSE4_1
-		#define JPH_USE_SSE4_2
-	#endif
+	#define JPH_DISABLE_CUSTOM_ALLOCATOR
 #elif defined(__e2k__)
 	// Elbrus e2k architecture
 	#define JPH_CPU_E2K
@@ -487,7 +483,7 @@ static_assert(sizeof(void *) == (JPH_CPU_ADDRESS_BITS == 64? 8 : 4), "Invalid si
 #endif
 
 // Shorthand for #ifdef JPH_FLOATING_POINT_EXCEPTIONS_ENABLED / #endif
-#ifdef JPH_FLOATING_POINT_EXCEPTIONS_ENABLED
+#if 1 || defined(JPH_FLOATING_POINT_EXCEPTIONS_ENABLED)
 	#define JPH_IF_FLOATING_POINT_EXCEPTIONS_ENABLED(...)	__VA_ARGS__
 #else
 	#define JPH_IF_FLOATING_POINT_EXCEPTIONS_ENABLED(...)

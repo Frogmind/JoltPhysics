@@ -588,12 +588,6 @@ void Ragdoll::GetPose(RVec3 &outRootOffset, Mat44 *outJointMatrices, bool inLock
 	}
 }
 
-void Ragdoll::ResetWarmStart()
-{
-	for (TwoBodyConstraint *c : mConstraints)
-		c->ResetWarmStart();
-}
-
 void Ragdoll::DriveToPoseUsingKinematics(const SkeletonPose &inPose, float inDeltaTime, bool inLockBodies)
 {
 	JPH_ASSERT(inPose.GetSkeleton() == mRagdollSettings->mSkeleton);

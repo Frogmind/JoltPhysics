@@ -140,7 +140,7 @@ void HingeConstraint::SetLimits(float inLimitsMin, float inLimitsMax)
 	// JPH_ASSERT(inLimitsMax >= 0.0f && inLimitsMax <= JPH_PI);
 	mLimitsMin = inLimitsMin;
 	mLimitsMax = inLimitsMax;
-	mHasLimits = mLimitsMin > -JPH_PI && mLimitsMax < JPH_PI;
+	mHasLimits = mLimitsMin > -JPH_PI || mLimitsMax < JPH_PI;
 }
 
 void HingeConstraint::CalculateA1AndTheta()
@@ -217,14 +217,6 @@ void HingeConstraint::SetupVelocityConstraint(float inDeltaTime)
 	CalculateA1AndTheta();
 	CalculateRotationLimitsConstraintProperties(inDeltaTime);
 	CalculateMotorConstraintProperties(inDeltaTime);
-}
-
-void HingeConstraint::ResetWarmStart()
-{
-	mMotorConstraintPart.Deactivate();
-	mPointConstraintPart.Deactivate();
-	mRotationConstraintPart.Deactivate();
-	mRotationLimitsConstraintPart.Deactivate();
 }
 
 void HingeConstraint::WarmStartVelocityConstraint(float inWarmStartImpulseRatio)

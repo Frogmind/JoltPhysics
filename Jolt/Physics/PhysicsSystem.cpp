@@ -1545,19 +1545,20 @@ void PhysicsSystem::JobIntegrateVelocity(const PhysicsUpdateContext *ioContext, 
 				{
 					// Determine inner radius (the smallest sphere that fits into the shape)
 					float inner_radius = body.GetShape()->GetInnerRadius();
-					JPH_ASSERT(inner_radius > 0.0f, "The shape has no inner radius, this makes the shape unsuitable for the linear cast motion quality as we cannot move it without risking tunneling.");
-
-					// Measure translation in this step and check if it above the threshold to perform a linear cast
-					float linear_cast_threshold_sq = Square(mPhysicsSettings.mLinearCastThreshold * inner_radius);
-					if (delta_pos.LengthSq() > linear_cast_threshold_sq)
+					if (inner_radius > 1e-4f)
 					{
-						// This body needs a cast
-						uint32 ccd_body_idx = ioStep->mNumCCDBodies++;
-						JPH_ASSERT(active_body_idx < ioStep->mNumActiveBodyToCCDBody);
-						ioStep->mActiveBodyToCCDBody[active_body_idx] = ccd_body_idx;
-						new (&ioStep->mCCDBodies[ccd_body_idx]) CCDBody(body_id, delta_pos, linear_cast_threshold_sq, min(mPhysicsSettings.mPenetrationSlop, mPhysicsSettings.mLinearCastMaxPenetration * inner_radius));
+						// Measure translation in this step and check if it above the threshold to perform a linear cast
+						float linear_cast_threshold_sq = Square(mPhysicsSettings.mLinearCastThreshold * inner_radius);
+						if (delta_pos.LengthSq() > linear_cast_threshold_sq)
+						{
+							// This body needs a cast
+							uint32 ccd_body_idx = ioStep->mNumCCDBodies++;
+							JPH_ASSERT(active_body_idx < ioStep->mNumActiveBodyToCCDBody);
+							ioStep->mActiveBodyToCCDBody[active_body_idx] = ccd_body_idx;
+							new (&ioStep->mCCDBodies[ccd_body_idx]) CCDBody(body_id, delta_pos, linear_cast_threshold_sq, min(mPhysicsSettings.mPenetrationSlop, mPhysicsSettings.mLinearCastMaxPenetration * inner_radius));
 
-						update_position = false;
+							update_position = false;
+						}
 					}
 				}
 				break;
