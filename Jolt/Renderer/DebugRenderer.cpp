@@ -239,9 +239,9 @@ void DebugRenderer::DrawCoordinateSystem(RMat44Arg inTransform, float inSize) {
   JPH_PROFILE_FUNCTION();
 
   DrawArrow(inTransform.GetTranslation(), inTransform * Vec3(inSize, 0, 0),
-            Color::sRed, 0.1f * inSize);
-  DrawArrow(inTransform.GetTranslation(), inTransform * Vec3(0, inSize, 0),
             Color::sGreen, 0.1f * inSize);
+  DrawArrow(inTransform.GetTranslation(), inTransform * Vec3(0, inSize, 0),
+            Color::sRed, 0.1f * inSize);
   DrawArrow(inTransform.GetTranslation(), inTransform * Vec3(0, 0, inSize),
             Color::sBlue, 0.1f * inSize);
 }

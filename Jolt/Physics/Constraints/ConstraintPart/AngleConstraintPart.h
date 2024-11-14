@@ -103,6 +103,7 @@ public:
 	///	@param inDamping Damping factor (0 = no damping, 1 = critical damping)
 	inline void					CalculateConstraintPropertiesWithFrequencyAndDamping(float inDeltaTime, const Body &inBody1, const Body &inBody2, Vec3Arg inWorldSpaceAxis, float inBias, float inC, float inFrequency, float inDamping)
 	{
+		inDeltaTime *= CombineTimeFactors(inBody1, inBody2);
 		float inv_effective_mass = CalculateInverseEffectiveMass(inBody1, inBody2, inWorldSpaceAxis);
 
 		if (inv_effective_mass == 0.0f)
@@ -123,6 +124,8 @@ public:
 	///	@param inDamping Spring damping coefficient c.
 	inline void					CalculateConstraintPropertiesWithStiffnessAndDamping(float inDeltaTime, const Body &inBody1, const Body &inBody2, Vec3Arg inWorldSpaceAxis, float inBias, float inC, float inStiffness, float inDamping)
 	{
+		inDeltaTime *= CombineTimeFactors(inBody1, inBody2);
+
 		float inv_effective_mass = CalculateInverseEffectiveMass(inBody1, inBody2, inWorldSpaceAxis);
 
 		if (inv_effective_mass == 0.0f)
@@ -134,6 +137,8 @@ public:
 	/// Selects one of the above functions based on the spring settings
 	inline void					CalculateConstraintPropertiesWithSettings(float inDeltaTime, const Body &inBody1, const Body &inBody2, Vec3Arg inWorldSpaceAxis, float inBias, float inC, const SpringSettings &inSpringSettings)
 	{
+		inDeltaTime *= CombineTimeFactors(inBody1, inBody2);
+
 		float inv_effective_mass = CalculateInverseEffectiveMass(inBody1, inBody2, inWorldSpaceAxis);
 
 		if (inv_effective_mass == 0.0f)

@@ -14,13 +14,13 @@ void MotionProperties::MoveKinematic(Vec3Arg inDeltaPosition, QuatArg inDeltaRot
 	JPH_ASSERT(mCachedMotionType != EMotionType::Static);
 
 	// Calculate required linear velocity
-	mLinearVelocity = LockTranslation(inDeltaPosition / inDeltaTime);
+	mLinearVelocity = LockTranslation(inDeltaPosition / (inDeltaTime * mTimeFactor));
 
 	// Calculate required angular velocity
 	Vec3 axis;
 	float angle;
 	inDeltaRotation.GetAxisAngle(axis, angle);
-	mAngularVelocity = LockAngular(axis * (angle / inDeltaTime));
+	mAngularVelocity = LockAngular(axis * (angle / (inDeltaTime * mTimeFactor)));
 }
 
 void MotionProperties::ClampLinearVelocity()
@@ -101,6 +101,8 @@ void MotionProperties::ApplyGyroscopicForceInternal(QuatArg inBodyRotation, floa
 	JPH_ASSERT(mCachedBodyType == EBodyType::RigidBody);
 	JPH_ASSERT(mCachedMotionType == EMotionType::Dynamic);
 
+	inDeltaTime *= mTimeFactor;
+
 	// Calculate local space inertia tensor (a diagonal in local space)
 	UVec4 is_zero = Vec3::sEquals(mInvInertiaDiagonal, Vec3::sZero());
 	Vec3 denominator = Vec3::sSelect(mInvInertiaDiagonal, Vec3::sReplicate(1.0f), is_zero);
@@ -128,6 +130,8 @@ void MotionProperties::ApplyForceTorqueAndDragInternal(QuatArg inBodyRotation, V
 	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite));
 	JPH_ASSERT(mCachedBodyType == EBodyType::RigidBody);
 	JPH_ASSERT(mCachedMotionType == EMotionType::Dynamic);
+
+	inDeltaTime *= mTimeFactor;
 
 	// Update linear velocity
 	mLinearVelocity = LockTranslation(mLinearVelocity + inDeltaTime * (mGravityFactor * inGravity + mInvMass * GetAccumulatedForce()));
@@ -173,6 +177,7 @@ void MotionProperties::ResetSleepTestSpheres(const RVec3 *inPoints)
 
 ECanSleep MotionProperties::AccumulateSleepTime(float inDeltaTime, float inTimeBeforeSleep)
 {
+	inDeltaTime *= mTimeFactor;
 	mSleepTestTimer += inDeltaTime;
 	return mSleepTestTimer >= inTimeBeforeSleep? ECanSleep::CanSleep : ECanSleep::CannotSleep;
 }

@@ -169,6 +169,7 @@ set(JOLT_PHYSICS_SRC_FILES
 	${JOLT_PHYSICS_ROOT}/Physics/Body/MotionProperties.inl
 	${JOLT_PHYSICS_ROOT}/Physics/Body/MotionQuality.h
 	${JOLT_PHYSICS_ROOT}/Physics/Body/MotionType.h
+	${JOLT_PHYSICS_ROOT}/Physics/Body/WaterProperties.h
 	${JOLT_PHYSICS_ROOT}/Physics/Character/Character.cpp
 	${JOLT_PHYSICS_ROOT}/Physics/Character/Character.h
 	${JOLT_PHYSICS_ROOT}/Physics/Character/CharacterBase.cpp
@@ -680,11 +681,11 @@ endif()
 
 # On Unix flavors we need the pthread library
 if (NOT ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows") AND NOT EMSCRIPTEN)
-	target_compile_options(Jolt PUBLIC -pthread)
+	#target_compile_options(Jolt PUBLIC -pthread)
 endif()
 
-if (EMSCRIPTEN)
+#if (EMSCRIPTEN)
 	# We need more than the default 64KB stack and 16MB memory
 	# Also disable warning: running limited binaryen optimizations because DWARF info requested (or indirectly required)
-	target_link_options(Jolt PUBLIC -sSTACK_SIZE=1048576 -sINITIAL_MEMORY=134217728 -Wno-limited-postlink-optimizations)
-endif()
+	#target_link_options(Jolt PUBLIC -sSTACK_SIZE=1048576 -sINITIAL_MEMORY=134217728 -Wno-limited-postlink-optimizations)
+#endif()

@@ -112,45 +112,45 @@ public:
 	/// These sensors will only detect collisions with active Dynamic or Kinematic bodies. As soon as a body go to sleep, the contact point with the sensor will be lost.
 	/// If you make a sensor Dynamic or Kinematic and activate them, the sensor will be able to detect collisions with sleeping bodies too. An active sensor will never go to sleep automatically.
 	/// When you make a Dynamic or Kinematic sensor, make sure it is in an ObjectLayer that does not collide with Static bodies or other sensors to avoid extra overhead in the broad phase.
-	inline void				SetIsSensor(bool inIsSensor)									{ JPH_ASSERT(IsRigidBody()); if (inIsSensor) mFlags.fetch_or(uint8(EFlags::IsSensor), memory_order_relaxed); else mFlags.fetch_and(uint8(~uint8(EFlags::IsSensor)), memory_order_relaxed); }
+	inline void				SetIsSensor(bool inIsSensor)									{ JPH_ASSERT(IsRigidBody()); if (inIsSensor) mFlags.fetch_or(uint16(EFlags::IsSensor), memory_order_relaxed); else mFlags.fetch_and(~uint16(EFlags::IsSensor), memory_order_relaxed); }
 
 	/// Check if this body is a sensor.
-	inline bool				IsSensor() const												{ return (mFlags.load(memory_order_relaxed) & uint8(EFlags::IsSensor)) != 0; }
+	inline bool				IsSensor() const												{ return (mFlags.load(memory_order_relaxed) & uint16(EFlags::IsSensor)) != 0; }
 
 	/// If kinematic objects can generate contact points against other kinematic or static objects.
 	/// Note that turning this on can be CPU intensive as much more collision detection work will be done without any effect on the simulation (kinematic objects are not affected by other kinematic/static objects).
 	/// This can be used to make sensors detect static objects. Note that the sensor must be kinematic and active for it to detect static objects.
-	inline void				SetCollideKinematicVsNonDynamic(bool inCollide)					{ JPH_ASSERT(IsRigidBody()); if (inCollide) mFlags.fetch_or(uint8(EFlags::CollideKinematicVsNonDynamic), memory_order_relaxed); else mFlags.fetch_and(uint8(~uint8(EFlags::CollideKinematicVsNonDynamic)), memory_order_relaxed); }
+	inline void				SetCollideKinematicVsNonDynamic(bool inCollide)					{ JPH_ASSERT(IsRigidBody()); if (inCollide) mFlags.fetch_or(uint16(EFlags::CollideKinematicVsNonDynamic), memory_order_relaxed); else mFlags.fetch_and(~uint16(EFlags::CollideKinematicVsNonDynamic), memory_order_relaxed); }
 
 	/// Check if kinematic objects can generate contact points against other kinematic or static objects.
-	inline bool				GetCollideKinematicVsNonDynamic() const							{ return (mFlags.load(memory_order_relaxed) & uint8(EFlags::CollideKinematicVsNonDynamic)) != 0; }
+	inline bool				GetCollideKinematicVsNonDynamic() const							{ return (mFlags.load(memory_order_relaxed) & uint16(EFlags::CollideKinematicVsNonDynamic)) != 0; }
 
 	/// If PhysicsSettings::mUseManifoldReduction is true, this allows turning off manifold reduction for this specific body.
 	/// Manifold reduction by default will combine contacts with similar normals that come from different SubShapeIDs (e.g. different triangles in a mesh shape or different compound shapes).
 	/// If the application requires tracking exactly which SubShapeIDs are in contact, you can turn off manifold reduction. Note that this comes at a performance cost.
 	/// Consider using BodyInterface::SetUseManifoldReduction if the body could already be in contact with other bodies to ensure that the contact cache is invalidated and you get the correct contact callbacks.
-	inline void				SetUseManifoldReduction(bool inUseReduction)					{ JPH_ASSERT(IsRigidBody()); if (inUseReduction) mFlags.fetch_or(uint8(EFlags::UseManifoldReduction), memory_order_relaxed); else mFlags.fetch_and(uint8(~uint8(EFlags::UseManifoldReduction)), memory_order_relaxed); }
+	inline void				SetUseManifoldReduction(bool inUseReduction)					{ JPH_ASSERT(IsRigidBody()); if (inUseReduction) mFlags.fetch_or(uint16(EFlags::UseManifoldReduction), memory_order_relaxed); else mFlags.fetch_and(~uint16(EFlags::UseManifoldReduction), memory_order_relaxed); }
 
 	/// Check if this body can use manifold reduction.
-	inline bool				GetUseManifoldReduction() const									{ return (mFlags.load(memory_order_relaxed) & uint8(EFlags::UseManifoldReduction)) != 0; }
+	inline bool				GetUseManifoldReduction() const									{ return (mFlags.load(memory_order_relaxed) & uint16(EFlags::UseManifoldReduction)) != 0; }
 
 	/// Checks if the combination of this body and inBody2 should use manifold reduction
-	inline bool				GetUseManifoldReductionWithBody(const Body &inBody2) const		{ return ((mFlags.load(memory_order_relaxed) & inBody2.mFlags.load(memory_order_relaxed)) & uint8(EFlags::UseManifoldReduction)) != 0; }
+	inline bool				GetUseManifoldReductionWithBody(const Body &inBody2) const		{ return ((mFlags.load(memory_order_relaxed) & inBody2.mFlags.load(memory_order_relaxed)) & uint16(EFlags::UseManifoldReduction)) != 0; }
 
 	/// Set to indicate that the gyroscopic force should be applied to this body (aka Dzhanibekov effect, see https://en.wikipedia.org/wiki/Tennis_racket_theorem)
-	inline void				SetApplyGyroscopicForce(bool inApply)							{ JPH_ASSERT(IsRigidBody()); if (inApply) mFlags.fetch_or(uint8(EFlags::ApplyGyroscopicForce), memory_order_relaxed); else mFlags.fetch_and(uint8(~uint8(EFlags::ApplyGyroscopicForce)), memory_order_relaxed); }
+	inline void				SetApplyGyroscopicForce(bool inApply)							{ JPH_ASSERT(IsRigidBody()); if (inApply) mFlags.fetch_or(uint16(EFlags::ApplyGyroscopicForce), memory_order_relaxed); else mFlags.fetch_and(~uint16(EFlags::ApplyGyroscopicForce), memory_order_relaxed); }
 
 	/// Check if the gyroscopic force is being applied for this body
-	inline bool				GetApplyGyroscopicForce() const									{ return (mFlags.load(memory_order_relaxed) & uint8(EFlags::ApplyGyroscopicForce)) != 0; }
+	inline bool				GetApplyGyroscopicForce() const									{ return (mFlags.load(memory_order_relaxed) & uint16(EFlags::ApplyGyroscopicForce)) != 0; }
 
 	/// Set to indicate that extra effort should be made to try to remove ghost contacts (collisions with internal edges of a mesh). This is more expensive but makes bodies move smoother over a mesh with convex edges.
-	inline void				SetEnhancedInternalEdgeRemoval(bool inApply)					{ JPH_ASSERT(IsRigidBody()); if (inApply) mFlags.fetch_or(uint8(EFlags::EnhancedInternalEdgeRemoval), memory_order_relaxed); else mFlags.fetch_and(uint8(~uint8(EFlags::EnhancedInternalEdgeRemoval)), memory_order_relaxed); }
+	inline void				SetEnhancedInternalEdgeRemoval(bool inApply)					{ JPH_ASSERT(IsRigidBody()); if (inApply) mFlags.fetch_or(uint16(EFlags::EnhancedInternalEdgeRemoval), memory_order_relaxed); else mFlags.fetch_and(~uint16(EFlags::EnhancedInternalEdgeRemoval), memory_order_relaxed); }
 
 	/// Check if enhanced internal edge removal is turned on
-	inline bool				GetEnhancedInternalEdgeRemoval() const							{ return (mFlags.load(memory_order_relaxed) & uint8(EFlags::EnhancedInternalEdgeRemoval)) != 0; }
+	inline bool				GetEnhancedInternalEdgeRemoval() const							{ return (mFlags.load(memory_order_relaxed) & uint16(EFlags::EnhancedInternalEdgeRemoval)) != 0; }
 
 	/// Checks if the combination of this body and inBody2 should use enhanced internal edge removal
-	inline bool				GetEnhancedInternalEdgeRemovalWithBody(const Body &inBody2) const { return ((mFlags.load(memory_order_relaxed) | inBody2.mFlags.load(memory_order_relaxed)) & uint8(EFlags::EnhancedInternalEdgeRemoval)) != 0; }
+	inline bool				GetEnhancedInternalEdgeRemovalWithBody(const Body &inBody2) const { return ((mFlags.load(memory_order_relaxed) | inBody2.mFlags.load(memory_order_relaxed)) & uint16(EFlags::EnhancedInternalEdgeRemoval)) != 0; }
 
 	/// Get the bodies motion type.
 	inline EMotionType		GetMotionType() const											{ return mMotionType; }
@@ -224,8 +224,16 @@ public:
 		mFrictionRestitution.mRestitution = ConvertZeroOneToU8(inRestitution);
 	}
 
-	void					AddTemporaryVelocity(Vec3Arg inLinearVelocity)					{ JPH_ASSERT(!IsStatic()); mMotionProperties->AddTemporaryVelocity(inLinearVelocity); }
-	void					AddTemporaryAngularVelocity(Vec3Arg inAngularVelocity)			{ JPH_ASSERT(!IsStatic()); mMotionProperties->AddTemporaryAngularVelocity(inAngularVelocity); }
+	void SetTimeFraction(float v) {
+		GetMotionPropertiesUnchecked()->SetTimeFactor(v);
+	}
+
+	void GetTimeFraction(float v) const {
+		GetMotionPropertiesUnchecked()->GetTimeFactor();
+	}
+
+	void					AddTemporaryVelocity(Vec3Arg inLinearVelocity)					{ JPH_ASSERT(!IsStatic()); mMotionProperties->AddTemporaryVelocity(inLinearVelocity * IsInBroadPhase()); }
+	void					AddTemporaryAngularVelocity(Vec3Arg inAngularVelocity)			{ JPH_ASSERT(!IsStatic()); mMotionProperties->AddTemporaryAngularVelocity(inAngularVelocity * IsInBroadPhase()); }
 
 	inline Vec3				GetTemporaryVelocity() const									{ return !IsStatic()? mMotionProperties->GetTemporaryVelocity() : Vec3::sZero(); }	
 	inline Vec3				GetTemporaryAngularVelocity() const 							{ return !IsStatic()? mMotionProperties->GetTemporaryAngularVelocity() : Vec3::sZero(); }
@@ -309,10 +317,10 @@ public:
 	bool					ApplyBuoyancyImpulse(RVec3Arg inSurfacePosition, Vec3Arg inSurfaceNormal, float inBuoyancy, float inLinearDrag, float inAngularDrag, Vec3Arg inFluidVelocity, Vec3Arg inGravity, float inDeltaTime);
 
 	/// Check if this body has been added to the physics system
-	inline bool				IsInBroadPhase() const											{ return (mFlags.load(memory_order_relaxed) & uint8(EFlags::IsInBroadPhase)) != 0; }
+	inline bool				IsInBroadPhase() const											{ return (mFlags.load(memory_order_relaxed) & uint16(EFlags::IsInBroadPhase)) != 0; }
 
 	/// Check if this body has been changed in such a way that the collision cache should be considered invalid for any body interacting with this body
-	inline bool				IsCollisionCacheInvalid() const									{ return (mFlags.load(memory_order_relaxed) & uint8(EFlags::InvalidateContactCache)) != 0; }
+	inline bool				IsCollisionCacheInvalid() const									{ return (mFlags.load(memory_order_relaxed) & uint16(EFlags::InvalidateContactCache)) != 0; }
 
 	/// Get the shape of this body
 	inline const Shape *	GetShape() const												{ return mShape; }
@@ -373,8 +381,8 @@ public:
 	static inline bool		sFindCollidingPairsCanCollide(const Body &inBody1, const Body &inBody2);
 
 	/// Update position using an Euler step (used during position integrate & constraint solving)
-	inline void				AddPositionStep(Vec3Arg inLinearVelocityTimesDeltaTime)			{ JPH_ASSERT(IsRigidBody()); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite)); mPosition += mMotionProperties->LockTranslation(inLinearVelocityTimesDeltaTime); JPH_ASSERT(!mPosition.IsNaN()); }
-	inline void				SubPositionStep(Vec3Arg inLinearVelocityTimesDeltaTime)			{ JPH_ASSERT(IsRigidBody()); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite)); mPosition -= mMotionProperties->LockTranslation(inLinearVelocityTimesDeltaTime); JPH_ASSERT(!mPosition.IsNaN()); }
+	inline void				AddPositionStep(Vec3Arg inLinearVelocityTimesDeltaTime)			{ JPH_ASSERT(IsRigidBody()); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite)); mPosition += mMotionProperties->LockTranslation(inLinearVelocityTimesDeltaTime * GetMotionPropertiesUnchecked()->GetTimeFactor()); JPH_ASSERT(!mPosition.IsNaN()); }
+	inline void				SubPositionStep(Vec3Arg inLinearVelocityTimesDeltaTime)			{ JPH_ASSERT(IsRigidBody()); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite)); mPosition -= mMotionProperties->LockTranslation(inLinearVelocityTimesDeltaTime * GetMotionPropertiesUnchecked()->GetTimeFactor()); JPH_ASSERT(!mPosition.IsNaN()); }
 
 	inline void ClearTemporaryVelocities() {
 		mMotionProperties->ClearTemporaryVelocities();
@@ -385,13 +393,13 @@ public:
 	inline void				SubRotationStep(Vec3Arg inAngularVelocityTimesDeltaTime);
 
 	/// Flag if body is in the broadphase (should only be called by the BroadPhase)
-	inline void				SetInBroadPhaseInternal(bool inInBroadPhase)					{ if (inInBroadPhase) mFlags.fetch_or(uint8(EFlags::IsInBroadPhase), memory_order_relaxed); else mFlags.fetch_and(uint8(~uint8(EFlags::IsInBroadPhase)), memory_order_relaxed); }
+	inline void				SetInBroadPhaseInternal(bool inInBroadPhase)					{ if (inInBroadPhase) mFlags.fetch_or(uint16(EFlags::IsInBroadPhase), memory_order_relaxed); else mFlags.fetch_and(~uint16(EFlags::IsInBroadPhase), memory_order_relaxed); }
 
 	/// Invalidate the contact cache (should only be called by the BodyManager), will be reset the next simulation step. Returns true if the contact cache was still valid.
-	inline bool				InvalidateContactCacheInternal()								{ return (mFlags.fetch_or(uint8(EFlags::InvalidateContactCache), memory_order_relaxed) & uint8(EFlags::InvalidateContactCache)) == 0; }
+	inline bool				InvalidateContactCacheInternal()								{ return (mFlags.fetch_or(uint16(EFlags::InvalidateContactCache), memory_order_relaxed) & uint16(EFlags::InvalidateContactCache)) == 0; }
 
 	/// Reset the collision cache invalid flag (should only be called by the BodyManager).
-	inline void				ValidateContactCacheInternal()									{ JPH_IF_ENABLE_ASSERTS(uint8 old_val = ) mFlags.fetch_and(uint8(~uint8(EFlags::InvalidateContactCache)), memory_order_relaxed); JPH_ASSERT((old_val & uint8(EFlags::InvalidateContactCache)) != 0); }
+	inline void				ValidateContactCacheInternal()									{ JPH_IF_ENABLE_ASSERTS(uint16 old_val = ) mFlags.fetch_and(~uint16(EFlags::InvalidateContactCache), memory_order_relaxed); JPH_ASSERT((old_val & uint16(EFlags::InvalidateContactCache)) != 0); }
 
 	/// Updates world space bounding box (should only be called by the PhysicsSystem)
 	void					CalculateWorldSpaceBoundsInternal();
@@ -428,15 +436,26 @@ public:
 	explicit				Body(bool, bool); // hehe even more alternative. difference is we allow motion properties. used for dummy bodies in drag joints to allow for nicer velocity updates.
 
 	bool IsForceUpdateVisualFromPhysical() {
-		return (mFlags.load(memory_order_relaxed) & uint8(EFlags::ForceUpdateVisualFromPhysical)) != 0;
+		return (mFlags.load(memory_order_relaxed) & uint16(EFlags::ForceUpdateVisualFromPhysical)) != 0;
+	}
+
+	void SetBodyIsWater(bool v) {
+		if(v)
+			mFlags.fetch_or(uint16(EFlags::BodyIsWater), memory_order_relaxed);
+		else
+			mFlags.fetch_and(uint16(~uint16(EFlags::BodyIsWater)), memory_order_relaxed);
+	}
+
+	bool IsWater() const {
+		return (mFlags & uint16(EFlags::BodyIsWater)) != 0;
 	}
 
 	void SetForceUpdateVisualFromPhysical() {
-		mFlags.fetch_or(uint8(EFlags::ForceUpdateVisualFromPhysical), memory_order_relaxed);
+		mFlags.fetch_or(uint16(EFlags::ForceUpdateVisualFromPhysical), memory_order_relaxed);
 	}
 
 	void ClearForceUpdateVisualFromPhysical() {
-		mFlags.fetch_and(uint8(~uint8(EFlags::ForceUpdateVisualFromPhysical)), memory_order_relaxed);
+		mFlags.fetch_and(~uint16(EFlags::ForceUpdateVisualFromPhysical), memory_order_relaxed);
 	}
 
 private:
@@ -448,7 +467,7 @@ private:
 
 	inline void				GetSleepTestPoints(RVec3 *outPoints) const;						///< Determine points to test for checking if body is sleeping: COM, COM + largest bounding box axis, COM + second largest bounding box axis
 
-	enum class EFlags : uint8
+	enum class EFlags : uint16
 	{
 		IsSensor						= 1 << 0,											///< If this object is a sensor. A sensor will receive collision callbacks, but will not cause any collision responses and can be used as a trigger volume.
 		CollideKinematicVsNonDynamic	= 1 << 1,											///< If kinematic objects can generate contact points against other kinematic or static objects.
@@ -458,6 +477,7 @@ private:
 		ApplyGyroscopicForce			= 1 << 5,											///< Set this bit to indicate that the gyroscopic force should be applied to this body (aka Dzhanibekov effect, see https://en.wikipedia.org/wiki/Tennis_racket_theorem)
 		EnhancedInternalEdgeRemoval		= 1 << 6,											///< Set this bit to indicate that enhanced internal edge removal should be used for this body (see BodyCreationSettings::mEnhancedInternalEdgeRemoval)
 		ForceUpdateVisualFromPhysical	= 1 << 7,											///< (Hypehype horror hack) Set this bit to indicate that the visual transform should be updated from the physical transform.
+		BodyIsWater						= 1 << 8,
 	};
 
 	// 16 byte aligned
@@ -482,13 +502,15 @@ private:
 	EBodyType				mBodyType;														///< Type of body (rigid or soft)
 	BroadPhaseLayer			mBroadPhaseLayer;												///< The broad phase layer this body belongs to
 	EMotionType				mMotionType;													///< Type of motion (static, dynamic or kinematic)
-	atomic<uint8>			mFlags = 0;														///< See EFlags for possible flags
+	atomic<uint16>			mFlags = 0;														///< See EFlags for possible flags
 
 	// 122 bytes up to here (64-bit mode, single precision, 16-bit ObjectLayer)
 };
 
 static_assert(JPH_CPU_ADDRESS_BITS != 64 || sizeof(Body) == JPH_IF_SINGLE_PRECISION_ELSE(128, 160), "Body size is incorrect");
 static_assert(alignof(Body) == JPH_RVECTOR_ALIGNMENT, "Body should properly align");
+
+float CombineTimeFactors(Body const& body1, Body const& body2);
 
 JPH_NAMESPACE_END
 

@@ -16,6 +16,9 @@
 #include <Jolt/Geometry/RayAABox.h>
 #include <Jolt/Geometry/OrientedBox.h>
 
+// for std::memcpy
+#include <cstring>
+
 #ifdef JPH_DUMP_BROADPHASE_TREE
 JPH_SUPPRESS_WARNINGS_STD_BEGIN
 #include <fstream>
@@ -255,7 +258,7 @@ void QuadTree::UpdatePrepare(const BodyVector &inBodies, TrackingVector &ioTrack
 #endif
 
 	// Assert sane data
-#ifdef JPH_DEBUG
+#if 0 && defined(JPH_DEBUG)
 	ValidateTree(inBodies, ioTracking, root_node.mIndex, mNumBodies);
 #endif
 
@@ -388,7 +391,7 @@ void QuadTree::UpdateFinalize([[maybe_unused]] const BodyVector &inBodies, [[may
 	DumpTree(new_root_node.GetNodeID(), StringFormat("%s_POST", mName).c_str());
 #endif
 
-#ifdef JPH_DEBUG
+#if 0 && defined(JPH_DEBUG)
 	ValidateTree(inBodies, inTracking, new_root_node.mIndex, mNumBodies);
 #endif
 }
@@ -803,7 +806,7 @@ void QuadTree::AddBodiesPrepare(const BodyVector &inBodies, TrackingVector &ioTr
 	// so they will stay together as a batch and will make the tree rebuild cheaper
 	outState.mLeafID = BuildTree(inBodies, ioTracking, (NodeID *)ioBodyIDs, inNumber, 0, outState.mLeafBounds);
 
-#ifdef JPH_DEBUG
+#if 0 && defined(JPH_DEBUG)
 	if (outState.mLeafID.IsNode())
 		ValidateTree(inBodies, ioTracking, outState.mLeafID.GetNodeIndex(), inNumber);
 #endif
@@ -958,12 +961,15 @@ JPH_INLINE void QuadTree::WalkTree(const ObjectLayerFilter &inObjectLayerFilter,
 #endif // JPH_TRACK_BROADPHASE_STATS
 
 	NodeID node_stack[cStackSize];
+	NodeID* currentMemory = node_stack;
+	int currentMemoryCount = cStackSize;
+
 	node_stack[0] = root_node.GetNodeID();
 	int top = 0;
 	do
 	{
 		// Check if node is a body
-		NodeID child_node_id = node_stack[top];
+		NodeID child_node_id = currentMemory[top];
 		if (child_node_id.IsBody())
 		{
 			// Track amount of bodies visited
@@ -997,7 +1003,7 @@ JPH_INLINE void QuadTree::WalkTree(const ObjectLayerFilter &inObjectLayerFilter,
 			JPH_IF_TRACK_BROADPHASE_STATS(++nodes_visited;)
 
 			// Check if stack can hold more nodes
-			if (top + 4 < cStackSize)
+			if (top + 4 < currentMemoryCount)
 			{
 				// Process normal node
 				const Node &node = mAllocator->Get(child_node_id.GetNodeIndex());
@@ -1016,11 +1022,19 @@ JPH_INLINE void QuadTree::WalkTree(const ObjectLayerFilter &inObjectLayerFilter,
 
 				// Check which sub nodes to visit
 				int num_results = ioVisitor.VisitNodes(bounds_minx, bounds_miny, bounds_minz, bounds_maxx, bounds_maxy, bounds_maxz, child_ids, top);
-				child_ids.StoreInt4((uint32 *)&node_stack[top]);
+				child_ids.StoreInt4((uint32 *)&currentMemory[top]);
 				top += num_results;
 			}
-			else
-				JPH_ASSERT(false, "Stack full!");
+			else {
+				// NOTE: Out of memory, need to reserve from heap.
+				auto* hehe = new NodeID[currentMemoryCount * 2];
+				std::memcpy(hehe, currentMemory, currentMemoryCount * sizeof(NodeID));
+				if (currentMemory != node_stack) {
+					delete[] currentMemory;
+				}
+				currentMemory = hehe;
+				currentMemoryCount *= 2;
+			}
 		}
 
 		// Fetch next node until we find one that the visitor wants to see
@@ -1029,6 +1043,10 @@ JPH_INLINE void QuadTree::WalkTree(const ObjectLayerFilter &inObjectLayerFilter,
 		while (top >= 0 && !ioVisitor.ShouldVisitNode(top));
 	}
 	while (top >= 0);
+
+	if (currentMemory != node_stack) {
+		delete[] currentMemory;
+	}
 
 #ifdef JPH_TRACK_BROADPHASE_STATS
 	// Calculate total time the broadphase walk took

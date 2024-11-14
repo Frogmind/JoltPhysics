@@ -342,16 +342,14 @@ void HingeConstraint::DrawConstraint(DebugRenderer *inRenderer) const
 
 void HingeConstraint::DrawConstraintLimits(DebugRenderer *inRenderer) const
 {
-	if (mHasLimits && mLimitsMax > mLimitsMin)
-	{
-		// Get constraint properties in world space
-		RMat44 transform1 = mBody1->GetCenterOfMassTransform();
-		RVec3 position1 = transform1 * mLocalSpacePosition1;
-		Vec3 hinge_axis1 = transform1.Multiply3x3(mLocalSpaceHingeAxis1);
-		Vec3 normal_axis1 = transform1.Multiply3x3(mLocalSpaceNormalAxis1);
+	bool limitsExist = mHasLimits && mLimitsMax > mLimitsMin;
+	// Get constraint properties in world space
+	RMat44 transform1 = mBody1->GetCenterOfMassTransform();
+	RVec3 position1 = transform1 * mLocalSpacePosition1;
+	Vec3 hinge_axis1 = transform1.Multiply3x3(mLocalSpaceHingeAxis1);
+	Vec3 normal_axis1 = transform1.Multiply3x3(mLocalSpaceNormalAxis1);
 
-		inRenderer->DrawPie(position1, mDrawConstraintSize, hinge_axis1, normal_axis1, mLimitsMin, mLimitsMax, Color::sPurple, DebugRenderer::ECastShadow::Off);
-	}
+	inRenderer->DrawPie(position1, mDrawConstraintSize, hinge_axis1, normal_axis1, limitsExist ? mLimitsMin : -JPH_PI * 0.7f, limitsExist ? mLimitsMax : +JPH_PI * 0.7f, limitsExist ? Color::sPurple : Color::sCyan, DebugRenderer::ECastShadow::Off);
 }
 #endif // JPH_DEBUG_RENDERER
 

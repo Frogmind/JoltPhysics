@@ -9,7 +9,7 @@ JPH_NAMESPACE_BEGIN
 /// Default implementation of AllocatorHasReallocate which tells if an allocator has a reallocate function
 template <class T> struct AllocatorHasReallocate { static constexpr bool sValue = false; };
 
-#ifndef JPH_DISABLE_CUSTOM_ALLOCATOR
+#if 0 && !defined(JPH_DISABLE_CUSTOM_ALLOCATOR)
 
 /// STL allocator that forwards to our allocation functions
 template <typename T>
@@ -109,7 +109,7 @@ using IStringStream = std::basic_istringstream<char, std::char_traits<char>, STL
 
 JPH_NAMESPACE_END
 
-#if (!defined(JPH_PLATFORM_WINDOWS) || defined(JPH_COMPILER_MINGW)) && !defined(JPH_DISABLE_CUSTOM_ALLOCATOR)
+#if 0 && (!defined(JPH_PLATFORM_WINDOWS) || defined(JPH_COMPILER_MINGW)) && !defined(JPH_DISABLE_CUSTOM_ALLOCATOR)
 
 namespace std
 {

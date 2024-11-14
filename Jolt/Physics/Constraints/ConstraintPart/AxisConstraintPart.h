@@ -304,6 +304,8 @@ public:
 	///	@param inDamping Damping factor (0 = no damping, 1 = critical damping).
 	inline void					CalculateConstraintPropertiesWithFrequencyAndDamping(float inDeltaTime, const Body &inBody1, Vec3Arg inR1PlusU, const Body &inBody2, Vec3Arg inR2, Vec3Arg inWorldSpaceAxis, float inBias, float inC, float inFrequency, float inDamping)
 	{
+		inDeltaTime *= CombineTimeFactors(inBody1, inBody2);
+
 		float inv_effective_mass = CalculateInverseEffectiveMass(inBody1, inR1PlusU, inBody2, inR2, inWorldSpaceAxis);
 
 		if (inv_effective_mass == 0.0f)
@@ -325,6 +327,8 @@ public:
 	///	@param inDamping Spring damping coefficient c.
 	inline void					CalculateConstraintPropertiesWithStiffnessAndDamping(float inDeltaTime, const Body &inBody1, Vec3Arg inR1PlusU, const Body &inBody2, Vec3Arg inR2, Vec3Arg inWorldSpaceAxis, float inBias, float inC, float inStiffness, float inDamping)
 	{
+		inDeltaTime *= CombineTimeFactors(inBody1, inBody2);
+
 		float inv_effective_mass = CalculateInverseEffectiveMass(inBody1, inR1PlusU, inBody2, inR2, inWorldSpaceAxis);
 
 		if (inv_effective_mass == 0.0f)
@@ -336,6 +340,8 @@ public:
 	/// Selects one of the above functions based on the spring settings
 	inline void					CalculateConstraintPropertiesWithSettings(float inDeltaTime, const Body &inBody1, Vec3Arg inR1PlusU, const Body &inBody2, Vec3Arg inR2, Vec3Arg inWorldSpaceAxis, float inBias, float inC, const SpringSettings &inSpringSettings)
 	{
+		inDeltaTime *= CombineTimeFactors(inBody1, inBody2);
+
 		float inv_effective_mass = CalculateInverseEffectiveMass(inBody1, inR1PlusU, inBody2, inR2, inWorldSpaceAxis);
 
 		if (inv_effective_mass == 0.0f)
@@ -405,51 +411,35 @@ public:
 		float jv;
 
 		// in friction, we ignore dynamic objects temporary velocities
-		if constexpr (true || UseCase == ConstraintUseCase::Friction) {
+		if constexpr (true) {
 			JPH::Vec3 totalLinearVelocity{ JPH::Vec3::sZero() };
 			if constexpr (Type1 == EMotionType::Kinematic) {
-				totalLinearVelocity += ioMotionProperties1->GetLinearVelocity() + ioMotionProperties1->GetTemporaryVelocity();
+				totalLinearVelocity += (ioMotionProperties1->GetLinearVelocity() + ioMotionProperties1->GetTemporaryVelocity()) * ioMotionProperties1->GetTimeFactorForFriction();
 			}
 			if constexpr (Type2 == EMotionType::Kinematic) {
-				totalLinearVelocity -= ioMotionProperties2->GetLinearVelocity() + ioMotionProperties2->GetTemporaryVelocity();
+				totalLinearVelocity -= (ioMotionProperties2->GetLinearVelocity() + ioMotionProperties2->GetTemporaryVelocity())* ioMotionProperties2->GetTimeFactorForFriction();
 			}
 
 			if constexpr (Type1 == EMotionType::Dynamic) {
-				totalLinearVelocity += ioMotionProperties1->GetLinearVelocity();
+				totalLinearVelocity += ioMotionProperties1->GetLinearVelocity() * ioMotionProperties1->GetTimeFactorForFriction();
 			}
 			if constexpr (Type2 == EMotionType::Dynamic) {
-				totalLinearVelocity -= ioMotionProperties2->GetLinearVelocity();
+				totalLinearVelocity -= ioMotionProperties2->GetLinearVelocity() * ioMotionProperties2->GetTimeFactorForFriction();
 			}
 
 			jv = inWorldSpaceAxis.Dot(totalLinearVelocity);
 
 			// Calculate jacobian multiplied by angular velocity
 			if constexpr (Type1 == EMotionType::Kinematic)
-				jv += Vec3::sLoadFloat3Unsafe(mR1PlusUxAxis).Dot(ioMotionProperties1->GetAngularVelocity() + ioMotionProperties1->GetTemporaryAngularVelocity());
+				jv += Vec3::sLoadFloat3Unsafe(mR1PlusUxAxis).Dot((ioMotionProperties1->GetAngularVelocity() + ioMotionProperties1->GetTemporaryAngularVelocity()) * ioMotionProperties1->GetTimeFactorForFriction());
 			if constexpr (Type2 == EMotionType::Kinematic)
-				jv -= Vec3::sLoadFloat3Unsafe(mR2xAxis).Dot(ioMotionProperties2->GetAngularVelocity() + ioMotionProperties2->GetTemporaryAngularVelocity());
+				jv -= Vec3::sLoadFloat3Unsafe(mR2xAxis).Dot((ioMotionProperties2->GetAngularVelocity() + ioMotionProperties2->GetTemporaryAngularVelocity()) * ioMotionProperties2->GetTimeFactorForFriction());
 
 			if constexpr (Type1 == EMotionType::Dynamic)
-				jv += Vec3::sLoadFloat3Unsafe(mR1PlusUxAxis).Dot(ioMotionProperties1->GetAngularVelocity());
+				jv += Vec3::sLoadFloat3Unsafe(mR1PlusUxAxis).Dot(ioMotionProperties1->GetAngularVelocity() * ioMotionProperties1->GetTimeFactorForFriction());
 			if constexpr (Type2 == EMotionType::Dynamic)
-				jv -= Vec3::sLoadFloat3Unsafe(mR2xAxis).Dot(ioMotionProperties2->GetAngularVelocity());
+				jv -= Vec3::sLoadFloat3Unsafe(mR2xAxis).Dot(ioMotionProperties2->GetAngularVelocity() * ioMotionProperties2->GetTimeFactorForFriction());
 
-		}
-		else {
-			if constexpr (Type1 != EMotionType::Static && Type2 != EMotionType::Static)
-				jv = inWorldSpaceAxis.Dot(ioMotionProperties1->GetLinearVelocity() + ioMotionProperties1->GetTemporaryVelocity() - ioMotionProperties2->GetLinearVelocity() - ioMotionProperties2->GetTemporaryVelocity());
-			else if constexpr (Type1 != EMotionType::Static)
-				jv = inWorldSpaceAxis.Dot(ioMotionProperties1->GetLinearVelocity() + ioMotionProperties1->GetTemporaryVelocity());
-			else if constexpr (Type2 != EMotionType::Static)
-				jv = inWorldSpaceAxis.Dot(-ioMotionProperties2->GetLinearVelocity() - ioMotionProperties2->GetTemporaryVelocity());
-			else
-				JPH_ASSERT(false); // Static vs static is nonsensical!
-
-			// Calculate jacobian multiplied by angular velocity
-			if constexpr (Type1 != EMotionType::Static)
-				jv += Vec3::sLoadFloat3Unsafe(mR1PlusUxAxis).Dot(ioMotionProperties1->GetAngularVelocity() + ioMotionProperties1->GetTemporaryAngularVelocity());
-			if constexpr (Type2 != EMotionType::Static)
-				jv -= Vec3::sLoadFloat3Unsafe(mR2xAxis).Dot(ioMotionProperties2->GetAngularVelocity() + ioMotionProperties2->GetTemporaryAngularVelocity());
 		}
 
 		// Lagrange multiplier is:

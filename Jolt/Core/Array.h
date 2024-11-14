@@ -45,6 +45,28 @@ public:
 	using const_iterator = const T *;
 	using iterator = T *;
 
+	struct reverse_iterator_t {
+		iterator value;
+
+		reverse_iterator_t& operator++() { --value; return *this; }
+		reverse_iterator_t operator++(int) { return iterator_t(value--); }
+		reverse_iterator_t& operator--() { ++value; return *this; }
+		reverse_iterator_t operator--(int) { return iterator_t(value++); }
+		reverse_iterator_t operator + (int v) { return { value - v }; }
+		reverse_iterator_t operator - (int v) { return { value + v }; }
+		reverse_iterator_t& operator += (int v) { value -= v; return *this; }
+		reverse_iterator_t& operator -= (int v) { value += v; return *this; }
+
+		T& operator *() const { return *value; }
+		T& operator ->() const { return *value; }
+
+		iterator base() const { return value; }
+
+		reverse_iterator_t& operator = (reverse_iterator_t other) { value = other.value; return *this; }
+		bool operator == (reverse_iterator_t other) const { return value == other.value; }
+		bool operator != (reverse_iterator_t other) const { return value != other.value; }
+	};
+
 private:
 	/// Move elements from one location to another
 	inline void				move(pointer inDestination, pointer inSource, size_type inCount)
@@ -385,8 +407,7 @@ public:
 		mSize++;
 	}
 
-	/// Remove one element from the array
-	void					erase(const_iterator inIter)
+	const_iterator					erase(const_iterator inIter)
 	{
 		size_type p = size_type(inIter - begin());
 		JPH_ASSERT(p < mSize);
@@ -394,10 +415,18 @@ public:
 		if (p + 1 < mSize)
 			move(mElements + p, mElements + p + 1, mSize - p - 1);
 		--mSize;
+		return inIter; // return iterator to one after erased, which is the same memory address as the input.
+	}
+
+	/// Remove one element from the array
+	iterator					erase(iterator inIter)
+	{
+		erase(static_cast<const_iterator>(inIter));
+		return inIter; // return iterator to one after erased, which is the same memory address as the input.
 	}
 
 	/// Remove multiple element from the array
-	void					erase(const_iterator inBegin, const_iterator inEnd)
+	const_iterator					erase(const_iterator inBegin, const_iterator inEnd)
 	{
 		size_type p = size_type(inBegin - begin());
 		size_type n = size_type(inEnd - inBegin);
@@ -406,6 +435,13 @@ public:
 		if (p + n < mSize)
 			move(mElements + p, mElements + p + n, mSize - p - n);
 		mSize -= n;
+		return inBegin; // return iterator to one after erased, which is the same memory address as the input.
+	}
+
+	iterator					erase(iterator inBegin, iterator inEnd)
+	{
+		erase(static_cast<const_iterator>(inBegin), static_cast<const_iterator>(inEnd));
+		return inBegin;
 	}
 
 	/// Iterators
@@ -437,6 +473,14 @@ public:
 	inline iterator			end()
 	{
 		return mElements + mSize;
+	}
+
+	inline reverse_iterator_t rbegin() {
+		return { mElements + mSize - 1 };
+	}
+
+	inline reverse_iterator_t rend() {
+		return { mElements - 1 };
 	}
 
 	inline const T *		data() const
@@ -591,6 +635,14 @@ namespace std
 			return ret;
 		}
 	};
+
+	template< class T, class Alloc, class Pred >
+	constexpr typename JPH::Array<T, Alloc>::size_type erase_if(JPH::Array<T, Alloc>& c, Pred&& pred) {
+		auto it = std::remove_if(c.begin(), c.end(), pred);
+		auto r = c.end() - it;
+		c.erase(it, c.end());
+		return r;
+	}
 }
 
 JPH_SUPPRESS_WARNING_POP

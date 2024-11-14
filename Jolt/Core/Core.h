@@ -187,6 +187,10 @@
 	#define JPH_VECTOR_ALIGNMENT 16
 	#define JPH_DVECTOR_ALIGNMENT 32
 	#define JPH_DISABLE_CUSTOM_ALLOCATOR
+	#if defined(NDEBUG)
+		// Emscripten says "local count too large" if SIMD is enabled in debug build, release is ok
+		#define JPH_USE_NEON
+	#endif
 #elif defined(__e2k__)
 	// E2K CPU architecture (MCST Elbrus 2000)
 	#define JPH_CPU_E2K

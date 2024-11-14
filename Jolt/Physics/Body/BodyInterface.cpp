@@ -316,11 +316,11 @@ void BodyInterface::SetShape(const BodyID &inBodyID, const Shape *inShape, bool 
 			{
 				BodyID id = body.GetID();
 				mBroadPhase->NotifyBodiesAABBChanged(&id, 1);
-			}
 
-			// Optionally activate body
-			if (inActivationMode == EActivation::Activate && !body.IsStatic())
-				ActivateBodyInternal(body);
+				// Optionally activate body
+				if (inActivationMode == EActivation::Activate && !body.IsStatic())
+					ActivateBodyInternal(body);
+			}
 		}
 	}
 }
@@ -401,11 +401,11 @@ void BodyInterface::SetPositionAndRotation(const BodyID &inBodyID, RVec3Arg inPo
 		{
 			BodyID id = body.GetID();
 			mBroadPhase->NotifyBodiesAABBChanged(&id, 1);
-		}
 
-		// Optionally activate body
-		if (inActivationMode == EActivation::Activate && !body.IsStatic())
-			ActivateBodyInternal(body);
+			// Optionally activate body
+			if (inActivationMode == EActivation::Activate && !body.IsStatic())
+				ActivateBodyInternal(body);
+		}
 	}
 }
 

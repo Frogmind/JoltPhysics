@@ -44,6 +44,10 @@ public:
 	Body *						GetBody1() const						{ return mBody1; }
 	Body *						GetBody2() const						{ return mBody2; }
 
+	float GetTimeFactor() const {
+		return mBody1->GetMotionPropertiesUnchecked()->GetTimeFactor() * mBody2->GetMotionPropertiesUnchecked()->GetTimeFactor();
+	}
+
 	/// Calculates the transform that transforms from constraint space to body 1 space. The first column of the matrix is the primary constraint axis (e.g. the hinge axis / slider direction), second column the secondary etc.
 	virtual Mat44				GetConstraintToBody1Matrix() const = 0;
 

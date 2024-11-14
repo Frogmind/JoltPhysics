@@ -25,9 +25,9 @@ void TwoBodyConstraint::BuildIslands(uint32 inConstraintIndex, IslandBuilder &io
 	// Activate bodies
 	BodyID body_ids[2];
 	int num_bodies = 0;
-	if (mBody1->IsDynamic() && !mBody1->IsActive())
+	if (mBody1->IsDynamic() && mBody1->IsInBroadPhase() && !mBody1->IsActive())
 		body_ids[num_bodies++] = mBody1->GetID();
-	if (mBody2->IsDynamic() && !mBody2->IsActive())
+	if (mBody2->IsDynamic() && mBody2->IsInBroadPhase() && !mBody2->IsActive())
 		body_ids[num_bodies++] = mBody2->GetID();
 	if (num_bodies > 0)
 		inBodyManager.ActivateBodies(body_ids, num_bodies);

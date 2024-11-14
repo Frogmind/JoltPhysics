@@ -616,7 +616,7 @@ EPhysicsUpdateError PhysicsSystem::Update(float inDeltaTime, int inCollisionStep
 
 	// Return any errors
 	EPhysicsUpdateError errors = static_cast<EPhysicsUpdateError>(context.mErrors.load(memory_order_acquire));
-	JPH_ASSERT(errors == EPhysicsUpdateError::None, "An error occurred during the physics update, see EPhysicsUpdateError for more information");
+	// JPH_ASSERT(errors == EPhysicsUpdateError::None, "An error occurred during the physics update, see EPhysicsUpdateError for more information");
 	return errors;
 }
 

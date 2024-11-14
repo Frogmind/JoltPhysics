@@ -193,6 +193,8 @@ bool Body::ApplyBuoyancyImpulse(RVec3Arg inSurfacePosition, Vec3Arg inSurfaceNor
 
 	JPH_ASSERT(IsRigidBody()); // Only implemented for rigid bodies currently
 
+	inDeltaTime *= GetMotionPropertiesUnchecked()->mTimeFactor;
+
 	// We follow the approach from 'Game Programming Gems 6' 2.5 Exact Buoyancy for Polyhedra
 	// All quantities below are in world space
 
@@ -418,6 +420,13 @@ SoftBodyCreationSettings Body::GetSoftBodyCreationSettings() const
 	result.mSettings = mp->GetSettings();
 
 	return result;
+}
+
+float CombineTimeFactors(Body const& body1, Body const& body2)
+{
+	auto* props1 = body1.GetMotionPropertiesUnchecked();
+	auto* props2 = body2.GetMotionPropertiesUnchecked();
+	return 0.5f * ((props1 ? props1->GetTimeFactor() : 1.0f) + (props2 ? props2->GetTimeFactor() : 1.0f));
 }
 
 JPH_NAMESPACE_END

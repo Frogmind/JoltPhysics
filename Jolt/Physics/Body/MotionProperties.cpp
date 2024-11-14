@@ -27,24 +27,11 @@ void MotionProperties::SetMassProperties(EAllowedDOFs inAllowedDOFs, const MassP
 	uint allowed_rotation_axis = (uint(inAllowedDOFs) >> 3) & 0b111;
 
 	// Set inverse mass
-	if (false && allowed_translation_axis == 0)
-	{
-		// No translation possible
-		mInvMass = 0.0f;
-	}
-	else
 	{
 		JPH_ASSERT(inMassProperties.mMass > 0.0f);
 		mInvMass = 1.0f / inMassProperties.mMass;
 	}
 
-	if (false && allowed_rotation_axis == 0)
-	{
-		// No rotation possible
-		mInvInertiaDiagonal = Vec3::sZero();
-		mInertiaRotation = Quat::sIdentity();
-	}
-	else
 	{
 		// Set inverse inertia
 		Mat44 rotation;

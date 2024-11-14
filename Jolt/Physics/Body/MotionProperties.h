@@ -11,6 +11,7 @@
 #include <Jolt/Physics/Body/MotionType.h>
 #include <Jolt/Physics/Body/BodyType.h>
 #include <Jolt/Physics/Body/MassProperties.h>
+#include <Jolt/Physics/Body/WaterProperties.h>
 #include <Jolt/Physics/DeterminismLog.h>
 
 JPH_NAMESPACE_BEGIN
@@ -46,6 +47,10 @@ public:
 
 	void					AddTemporaryVelocity(Vec3Arg inLinearVelocity) { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); mTemporaryVelocity += inLinearVelocity; }
 	void					AddTemporaryAngularVelocity(Vec3Arg inAngularVelocity) { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); mTemporaryAngularVelocity += inAngularVelocity; }
+
+	void SetTimeFactor(float v) { mTimeFactor = v; }
+	float GetTimeFactor() const { return mTimeFactor; }
+	float GetTimeFactorForFriction() const { return (Flag_TimeSlowVelocity & mHypehypeFlags) ? mTimeFactor : 1.0f; }
 
 	/// Get the allowed degrees of freedom that this body has (this can be changed by calling SetMassProperties)
 	inline EAllowedDOFs		GetAllowedDOFs() const											{ return mAllowedDOFs; }
@@ -175,7 +180,7 @@ public:
 	JPH_INLINE Vec3			MultiplyWorldSpaceInverseInertiaByVector(QuatArg inBodyRotation, Vec3Arg inV) const;
 
 	/// Velocity of point inPoint (in center of mass space, e.g. on the surface of the body) of the body (unit: m/s)
-	JPH_INLINE Vec3			GetPointVelocityCOM(Vec3Arg inPointRelativeToCOM) const			{ return mLinearVelocity + mAngularVelocity.Cross(inPointRelativeToCOM); }
+	JPH_INLINE Vec3			GetPointVelocityCOM(Vec3Arg inPointRelativeToCOM) const			{ return (mLinearVelocity + mAngularVelocity.Cross(inPointRelativeToCOM)) * mTimeFactor; }
 
 	// Get the total amount of force applied to the center of mass this time step (through Body::AddForce calls). Note that it will reset to zero after PhysicsSystem::Update.
 	JPH_INLINE Vec3			GetAccumulatedForce() const										{ return Vec3::sLoadFloat3Unsafe(mForce); }
@@ -257,11 +262,11 @@ public:
 
 	///@name Update linear and angular velocity (used during constraint solving)
 	///@{
-	inline void				AddLinearVelocityStep(Vec3Arg inLinearVelocityChange)			{ JPH_DET_LOG("AddLinearVelocityStep: " << inLinearVelocityChange); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); mLinearVelocity = LockTranslation(mLinearVelocity + inLinearVelocityChange); JPH_ASSERT(!mLinearVelocity.IsNaN()); }
-	inline void				SubLinearVelocityStep(Vec3Arg inLinearVelocityChange)			{ JPH_DET_LOG("SubLinearVelocityStep: " << inLinearVelocityChange); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); mLinearVelocity = LockTranslation(mLinearVelocity - inLinearVelocityChange); JPH_ASSERT(!mLinearVelocity.IsNaN()); }
+	inline void				AddLinearVelocityStep(Vec3Arg inLinearVelocityChange)			{ /* JPH_DET_LOG("AddLinearVelocityStep: " << inLinearVelocityChange); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); */ mLinearVelocity = LockTranslation(mLinearVelocity + inLinearVelocityChange); JPH_ASSERT(!mLinearVelocity.IsNaN()); }
+	inline void				SubLinearVelocityStep(Vec3Arg inLinearVelocityChange)			{ /* JPH_DET_LOG("SubLinearVelocityStep: " << inLinearVelocityChange); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); */ mLinearVelocity = LockTranslation(mLinearVelocity - inLinearVelocityChange); JPH_ASSERT(!mLinearVelocity.IsNaN()); }
 
-	inline void				AddAngularVelocityStep(Vec3Arg inAngularVelocityChange)			{ JPH_DET_LOG("AddAngularVelocityStep: " << inAngularVelocityChange); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); mAngularVelocity = LockAngular(mAngularVelocity + inAngularVelocityChange); JPH_ASSERT(!mAngularVelocity.IsNaN()); }
-	inline void				SubAngularVelocityStep(Vec3Arg inAngularVelocityChange) 		{ JPH_DET_LOG("SubAngularVelocityStep: " << inAngularVelocityChange); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); mAngularVelocity = LockAngular(mAngularVelocity - inAngularVelocityChange); JPH_ASSERT(!mAngularVelocity.IsNaN()); }
+	inline void				AddAngularVelocityStep(Vec3Arg inAngularVelocityChange)			{ /* JPH_DET_LOG("AddAngularVelocityStep: " << inAngularVelocityChange); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); */ mAngularVelocity = LockAngular(mAngularVelocity + inAngularVelocityChange); JPH_ASSERT(!mAngularVelocity.IsNaN()); }
+	inline void				SubAngularVelocityStep(Vec3Arg inAngularVelocityChange) 		{ /* JPH_DET_LOG("SubAngularVelocityStep: " << inAngularVelocityChange); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); */ mAngularVelocity = LockAngular(mAngularVelocity - inAngularVelocityChange); JPH_ASSERT(!mAngularVelocity.IsNaN()); }
 	///@}
 
 	/// Apply the gyroscopic force (aka Dzhanibekov effect, see https://en.wikipedia.org/wiki/Tennis_racket_theorem)
@@ -301,6 +306,18 @@ public:
 
 	static constexpr uint32	cInactiveIndex = uint32(-1);									///< Constant indicating that body is not active
 
+	WaterProperties& getWaterProperties() {
+		return mWaterProperties;
+	}
+
+	const WaterProperties& getWaterProperties() const {
+		return mWaterProperties;
+	}
+
+	uint8& GetFlags() {
+		return mHypehypeFlags;
+	}
+
 private:
 	friend class BodyManager;
 	friend class Body;
@@ -316,6 +333,7 @@ private:
 
 	Vec3					mSurfaceVelocity { Vec3::sZero() };												///< Additional surface velocity in local space
 
+	WaterProperties			mWaterProperties; // Hypehype dirty hacks.
 
 	// 2nd cache line
 	// 4 byte aligned
@@ -327,8 +345,13 @@ private:
 	float					mMaxLinearVelocity;												///< Maximum linear velocity that this body can reach (m/s)
 	float					mMaxAngularVelocity;											///< Maximum angular velocity that this body can reach (rad/s)
 	float					mGravityFactor;													///< Factor to multiply gravity with
+	float					mTimeFactor = 1.0f;
 	uint32					mIndexInActiveBodies = cInactiveIndex;							///< If the body is active, this is the index in the active body list or cInactiveIndex if it is not active (note that there are 2 lists, one for rigid and one for soft bodies)
 	uint32					mIslandIndex = cInactiveIndex;									///< Index of the island that this body is part of, when the body has not yet been updated or is not active this is cInactiveIndex
+
+	enum Flags {
+		Flag_TimeSlowVelocity = 1
+	};
 
 	// 1 byte aligned
 	EMotionQuality			mMotionQuality;													///< Motion quality, or how well it detects collisions when it has a high velocity
@@ -337,6 +360,7 @@ private:
 	uint8					mNumVelocityStepsOverride = 0;									///< Used only when this body is dynamic and colliding. Override for the number of solver velocity iterations to run, 0 means use the default in PhysicsSettings::mNumVelocitySteps. The number of iterations to use is the max of all contacts and constraints in the island.
 	uint8					mNumPositionStepsOverride = 0;									///< Used only when this body is dynamic and colliding. Override for the number of solver position iterations to run, 0 means use the default in PhysicsSettings::mNumPositionSteps. The number of iterations to use is the max of all contacts and constraints in the island.
 	uint8					mNumSleepPrevents = 0;
+	uint8					mHypehypeFlags = 0;
 
 	// 3rd cache line (least frequently used)
 	// 4 byte aligned (or 8 byte if running in double precision)
