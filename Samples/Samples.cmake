@@ -177,6 +177,8 @@ set(SAMPLES_SRC_FILES
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyShapesTest.h
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodySkinnedConstraintTest.cpp
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodySkinnedConstraintTest.h
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodySensorTest.cpp
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodySensorTest.h
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyStressTest.cpp
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyStressTest.h
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyUpdatePositionTest.cpp
@@ -209,10 +211,14 @@ set(SAMPLES_SRC_FILES
 	${SAMPLES_ROOT}/Tests/ScaledShapes/ScaledHeightFieldShapeTest.h
 	${SAMPLES_ROOT}/Tests/ScaledShapes/ScaledMeshShapeTest.cpp
 	${SAMPLES_ROOT}/Tests/ScaledShapes/ScaledMeshShapeTest.h
+	${SAMPLES_ROOT}/Tests/ScaledShapes/ScaledPlaneShapeTest.cpp
+	${SAMPLES_ROOT}/Tests/ScaledShapes/ScaledPlaneShapeTest.h
 	${SAMPLES_ROOT}/Tests/ScaledShapes/ScaledSphereShapeTest.cpp
 	${SAMPLES_ROOT}/Tests/ScaledShapes/ScaledSphereShapeTest.h
 	${SAMPLES_ROOT}/Tests/ScaledShapes/ScaledTaperedCapsuleShapeTest.cpp
 	${SAMPLES_ROOT}/Tests/ScaledShapes/ScaledTaperedCapsuleShapeTest.h
+	${SAMPLES_ROOT}/Tests/ScaledShapes/ScaledTaperedCylinderShapeTest.cpp
+	${SAMPLES_ROOT}/Tests/ScaledShapes/ScaledTaperedCylinderShapeTest.h
 	${SAMPLES_ROOT}/Tests/ScaledShapes/ScaledTriangleShapeTest.cpp
 	${SAMPLES_ROOT}/Tests/ScaledShapes/ScaledTriangleShapeTest.h
 	${SAMPLES_ROOT}/Tests/Shapes/BoxShapeTest.cpp
@@ -221,6 +227,8 @@ set(SAMPLES_SRC_FILES
 	${SAMPLES_ROOT}/Tests/Shapes/CapsuleShapeTest.h
 	${SAMPLES_ROOT}/Tests/Shapes/DeformedHeightFieldShapeTest.cpp
 	${SAMPLES_ROOT}/Tests/Shapes/DeformedHeightFieldShapeTest.h
+	${SAMPLES_ROOT}/Tests/Shapes/EmptyShapeTest.cpp
+	${SAMPLES_ROOT}/Tests/Shapes/EmptyShapeTest.h
 	${SAMPLES_ROOT}/Tests/Shapes/StaticCompoundShapeTest.cpp
 	${SAMPLES_ROOT}/Tests/Shapes/StaticCompoundShapeTest.h
 	${SAMPLES_ROOT}/Tests/Shapes/MutableCompoundShapeTest.cpp
@@ -235,12 +243,18 @@ set(SAMPLES_SRC_FILES
 	${SAMPLES_ROOT}/Tests/Shapes/HeightFieldShapeTest.h
 	${SAMPLES_ROOT}/Tests/Shapes/MeshShapeTest.cpp
 	${SAMPLES_ROOT}/Tests/Shapes/MeshShapeTest.h
+	${SAMPLES_ROOT}/Tests/Shapes/MeshShapeUserDataTest.cpp
+	${SAMPLES_ROOT}/Tests/Shapes/MeshShapeUserDataTest.h
 	${SAMPLES_ROOT}/Tests/Shapes/SphereShapeTest.cpp
 	${SAMPLES_ROOT}/Tests/Shapes/SphereShapeTest.h
+	${SAMPLES_ROOT}/Tests/Shapes/PlaneShapeTest.cpp
+	${SAMPLES_ROOT}/Tests/Shapes/PlaneShapeTest.h
 	${SAMPLES_ROOT}/Tests/Shapes/RotatedTranslatedShapeTest.cpp
 	${SAMPLES_ROOT}/Tests/Shapes/RotatedTranslatedShapeTest.h
 	${SAMPLES_ROOT}/Tests/Shapes/TaperedCapsuleShapeTest.cpp
 	${SAMPLES_ROOT}/Tests/Shapes/TaperedCapsuleShapeTest.h
+	${SAMPLES_ROOT}/Tests/Shapes/TaperedCylinderShapeTest.cpp
+	${SAMPLES_ROOT}/Tests/Shapes/TaperedCylinderShapeTest.h
 	${SAMPLES_ROOT}/Tests/Shapes/TriangleShapeTest.cpp
 	${SAMPLES_ROOT}/Tests/Shapes/TriangleShapeTest.h
 	${SAMPLES_ROOT}/Tests/Vehicle/MotorcycleTest.cpp

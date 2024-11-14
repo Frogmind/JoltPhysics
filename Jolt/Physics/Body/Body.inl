@@ -8,21 +8,21 @@ JPH_NAMESPACE_BEGIN
 
 RMat44 Body::GetWorldTransform() const
 {
-	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::Read));
+	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess(), BodyAccess::EAccess::Read));
 
 	return RMat44::sRotationTranslation(mRotation, mPosition).PreTranslated(-mShape->GetCenterOfMass());
 }
 
 RMat44 Body::GetCenterOfMassTransform() const
 {
-	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::Read));
+	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess(), BodyAccess::EAccess::Read));
 
 	return RMat44::sRotationTranslation(mRotation, mPosition);
 }
 
 RMat44 Body::GetInverseCenterOfMassTransform() const
 {
-	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::Read));
+	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess(), BodyAccess::EAccess::Read));
 
 	return RMat44::sInverseRotationTranslation(mRotation, mPosition);
 }
@@ -86,8 +86,7 @@ inline bool Body::sFindCollidingPairsCanCollide(const Body &inBody1, const Body 
 void Body::AddRotationStep(Vec3Arg inAngularVelocityTimesDeltaTime)
 {
 	JPH_ASSERT(IsRigidBody());
-	JPH_ASSERT(mMotionProperties);
-	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite));
+	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess(), BodyAccess::EAccess::ReadWrite));
 
 	float timeFactor = GetMotionPropertiesUnchecked()->mTimeFactor;
 	Vec3 angularVelocityTimesDeltaTime = mMotionProperties->LockAngular(inAngularVelocityTimesDeltaTime * timeFactor);
@@ -109,8 +108,7 @@ void Body::AddRotationStep(Vec3Arg inAngularVelocityTimesDeltaTime)
 void Body::SubRotationStep(Vec3Arg inAngularVelocityTimesDeltaTime)
 {
 	JPH_ASSERT(IsRigidBody());
-	JPH_ASSERT(mMotionProperties);
-	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::ReadWrite));
+	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess(), BodyAccess::EAccess::ReadWrite));
 
 	float timeFactor = GetMotionPropertiesUnchecked()->mTimeFactor;
 	Vec3 angularVelocityTimesDeltaTime = mMotionProperties->LockAngular(inAngularVelocityTimesDeltaTime * timeFactor);
@@ -168,7 +166,7 @@ void Body::AddAngularImpulse(Vec3Arg inAngularImpulse)
 
 void Body::GetSleepTestPoints(RVec3 *outPoints) const
 {
-	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess, BodyAccess::EAccess::Read));
+	JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sPositionAccess(), BodyAccess::EAccess::Read));
 
 	// Center of mass is the first position
 	outPoints[0] = mPosition;

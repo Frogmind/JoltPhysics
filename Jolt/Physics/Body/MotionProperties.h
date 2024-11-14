@@ -39,14 +39,14 @@ public:
 		mTemporaryAngularVelocity = Vec3::sZero();
 	}
 
-	inline Vec3				GetTemporaryVelocity() const { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::Read)); return mTemporaryVelocity; }
-	inline Vec3				GetSurfaceVelocity() const { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::Read)); return mSurfaceVelocity; }
-	inline Vec3				GetTemporaryAngularVelocity() const { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::Read)); return mTemporaryAngularVelocity; }		
+	inline Vec3				GetTemporaryVelocity() const { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess(), BodyAccess::EAccess::Read)); return mTemporaryVelocity; }
+	inline Vec3				GetSurfaceVelocity() const { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess(), BodyAccess::EAccess::Read)); return mSurfaceVelocity; }
+	inline Vec3				GetTemporaryAngularVelocity() const { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess(), BodyAccess::EAccess::Read)); return mTemporaryAngularVelocity; }		
 
-	void					SetSurfaceVelocity(Vec3Arg inSurfaceVelocity) { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); mSurfaceVelocity = inSurfaceVelocity; }
+	void					SetSurfaceVelocity(Vec3Arg inSurfaceVelocity) { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess(), BodyAccess::EAccess::ReadWrite)); mSurfaceVelocity = inSurfaceVelocity; }
 
-	void					AddTemporaryVelocity(Vec3Arg inLinearVelocity) { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); mTemporaryVelocity += inLinearVelocity; }
-	void					AddTemporaryAngularVelocity(Vec3Arg inAngularVelocity) { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); mTemporaryAngularVelocity += inAngularVelocity; }
+	void					AddTemporaryVelocity(Vec3Arg inLinearVelocity) { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess(), BodyAccess::EAccess::ReadWrite)); mTemporaryVelocity += inLinearVelocity; }
+	void					AddTemporaryAngularVelocity(Vec3Arg inAngularVelocity) { JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess(), BodyAccess::EAccess::ReadWrite)); mTemporaryAngularVelocity += inAngularVelocity; }
 
 	void SetTimeFactor(float v) { mTimeFactor = v; }
 	float GetTimeFactor() const { return mTimeFactor; }
@@ -79,11 +79,11 @@ public:
 	inline bool				GetAllowSleeping() const										{ return mAllowSleeping; }
 
 	/// Get world space linear velocity of the center of mass
-	inline Vec3				GetLinearVelocity() const										{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::Read)); return mLinearVelocity; }
+	inline Vec3				GetLinearVelocity() const										{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess(), BodyAccess::EAccess::Read)); return mLinearVelocity; }
 
 	/// Set world space linear velocity of the center of mass
 	void					SetLinearVelocity(Vec3Arg inLinearVelocity)						{
-		JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite));
+		JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess(), BodyAccess::EAccess::ReadWrite));
 		JPH_ASSERT(inLinearVelocity.Length() <= mMaxLinearVelocity);
 		mLinearVelocity = LockTranslation(inLinearVelocity);
 	}
@@ -95,11 +95,11 @@ public:
 	}
 
 	/// Get world space angular velocity of the center of mass
-	inline Vec3				GetAngularVelocity() const										{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::Read)); return mAngularVelocity; }
+	inline Vec3				GetAngularVelocity() const										{ JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess(), BodyAccess::EAccess::Read)); return mAngularVelocity; }
 
 	/// Set world space angular velocity of the center of mass
 	void					SetAngularVelocity(Vec3Arg inAngularVelocity)					{
-		JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite));
+		JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess(), BodyAccess::EAccess::ReadWrite));
 		JPH_ASSERT(inAngularVelocity.Length() <= mMaxAngularVelocity);
 		mAngularVelocity = LockAngular(inAngularVelocity);
 	}
@@ -151,7 +151,7 @@ public:
 
 	/// Set the inverse mass (1 / mass).
 	/// Note that mass and inertia are linearly related (e.g. inertia of a sphere with mass m and radius r is \f$2/5 \: m \: r^2\f$).
-	/// If you change mass, inertia should probably change as well. See MassProperties::ScaleToMass.
+	/// If you change mass, inertia should probably change as well. You can use ScaleToMass to update mass and inertia at the same time.
 	/// If all your translation degrees of freedom are restricted, make sure this is zero (see EAllowedDOFs).
 	void					SetInverseMass(float inInverseMass)								{ mInvMass = inInverseMass; }
 
@@ -163,9 +163,13 @@ public:
 
 	/// Set the inverse inertia tensor in local space by setting the diagonal and the rotation: \f$I_{body}^{-1} = R \: D \: R^{-1}\f$.
 	/// Note that mass and inertia are linearly related (e.g. inertia of a sphere with mass m and radius r is \f$2/5 \: m \: r^2\f$).
-	/// If you change inertia, mass should probably change as well. See MassProperties::ScaleToMass.
+	/// If you change inertia, mass should probably change as well. You can use ScaleToMass to update mass and inertia at the same time.
 	/// If all your rotation degrees of freedom are restricted, make sure this is zero (see EAllowedDOFs).
 	void					SetInverseInertia(Vec3Arg inDiagonal, QuatArg inRot)			{ mInvInertiaDiagonal = Vec3::sFixW(inDiagonal.mValue); mInertiaRotation = inRot; }
+
+	/// Sets the mass to inMass and scale the inertia tensor based on the ratio between the old and new mass.
+	/// Note that this only works when the current mass is finite (i.e. the body is dynamic and translational degrees of freedom are not restricted).
+	void					ScaleToMass(float inMass);
 
 	/// Get inverse inertia matrix (\f$I_{body}^{-1}\f$). Will be a matrix of zeros for a static or kinematic object.
 	inline Mat44			GetLocalSpaceInverseInertia() const;
@@ -209,7 +213,7 @@ public:
 	// Reset the current velocity and accumulated force and torque.
 	JPH_INLINE void			ResetMotion()
 	{
-		JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite));
+		JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess(), BodyAccess::EAccess::ReadWrite));
 		mLinearVelocity = mAngularVelocity = Vec3::sZero();
 		mForce = mTorque = Float3(0, 0, 0);
 	}
@@ -267,6 +271,7 @@ public:
 
 	inline void				AddAngularVelocityStep(Vec3Arg inAngularVelocityChange)			{ /* JPH_DET_LOG("AddAngularVelocityStep: " << inAngularVelocityChange); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); */ mAngularVelocity = LockAngular(mAngularVelocity + inAngularVelocityChange); JPH_ASSERT(!mAngularVelocity.IsNaN()); }
 	inline void				SubAngularVelocityStep(Vec3Arg inAngularVelocityChange) 		{ /* JPH_DET_LOG("SubAngularVelocityStep: " << inAngularVelocityChange); JPH_ASSERT(BodyAccess::sCheckRights(BodyAccess::sVelocityAccess, BodyAccess::EAccess::ReadWrite)); */ mAngularVelocity = LockAngular(mAngularVelocity - inAngularVelocityChange); JPH_ASSERT(!mAngularVelocity.IsNaN()); }
+
 	///@}
 
 	/// Apply the gyroscopic force (aka Dzhanibekov effect, see https://en.wikipedia.org/wiki/Tennis_racket_theorem)

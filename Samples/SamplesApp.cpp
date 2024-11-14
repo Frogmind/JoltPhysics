@@ -32,12 +32,16 @@
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/TaperedCapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/CylinderShape.h>
+#include <Jolt/Physics/Collision/Shape/TaperedCylinderShape.h>
 #include <Jolt/Physics/Collision/Shape/TriangleShape.h>
+#include <Jolt/Physics/Collision/Shape/PlaneShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/StaticCompoundShape.h>
 #include <Jolt/Physics/Collision/Shape/MutableCompoundShape.h>
 #include <Jolt/Physics/Collision/Shape/ScaledShape.h>
+#include <Jolt/Physics/Collision/Shape/EmptyShape.h>
 #include <Jolt/Physics/Collision/NarrowPhaseStats.h>
+#include <Jolt/Physics/Collision/CollideSoftBodyVertexIterator.h>
 #include <Jolt/Physics/Constraints/DistanceConstraint.h>
 #include <Jolt/Physics/Constraints/PulleyConstraint.h>
 #include <Jolt/Physics/Character/CharacterVirtual.h>
@@ -201,15 +205,19 @@ JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, SphereShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, TaperedCapsuleShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, CapsuleShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, CylinderShapeTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, TaperedCylinderShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, StaticCompoundShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, MutableCompoundShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, TriangleShapeTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, PlaneShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ConvexHullShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, MeshShapeTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, MeshShapeUserDataTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, HeightFieldShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, DeformedHeightFieldShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, RotatedTranslatedShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, OffsetCenterOfMassShapeTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, EmptyShapeTest)
 
 static TestNameAndRTTI sShapeTests[] =
 {
@@ -218,15 +226,19 @@ static TestNameAndRTTI sShapeTests[] =
 	{ "Capsule Shape",						JPH_RTTI(CapsuleShapeTest) },
 	{ "Tapered Capsule Shape",				JPH_RTTI(TaperedCapsuleShapeTest) },
 	{ "Cylinder Shape",						JPH_RTTI(CylinderShapeTest) },
+	{ "Tapered Cylinder Shape",				JPH_RTTI(TaperedCylinderShapeTest) },
 	{ "Convex Hull Shape",					JPH_RTTI(ConvexHullShapeTest) },
 	{ "Mesh Shape",							JPH_RTTI(MeshShapeTest) },
+	{ "Mesh Shape Per Triangle User Data",	JPH_RTTI(MeshShapeUserDataTest) },
 	{ "Height Field Shape",					JPH_RTTI(HeightFieldShapeTest) },
 	{ "Deformed Height Field Shape",		JPH_RTTI(DeformedHeightFieldShapeTest) },
 	{ "Static Compound Shape",				JPH_RTTI(StaticCompoundShapeTest) },
 	{ "Mutable Compound Shape",				JPH_RTTI(MutableCompoundShapeTest) },
 	{ "Triangle Shape",						JPH_RTTI(TriangleShapeTest) },
+	{ "Plane Shape",						JPH_RTTI(PlaneShapeTest) },
 	{ "Rotated Translated Shape",			JPH_RTTI(RotatedTranslatedShapeTest) },
-	{ "Offset Center Of Mass Shape",		JPH_RTTI(OffsetCenterOfMassShapeTest) }
+	{ "Offset Center Of Mass Shape",		JPH_RTTI(OffsetCenterOfMassShapeTest) },
+	{ "Empty Shape",						JPH_RTTI(EmptyShapeTest) }
 };
 
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledSphereShapeTest)
@@ -234,12 +246,14 @@ JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledBoxShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledCapsuleShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledTaperedCapsuleShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledCylinderShapeTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledTaperedCylinderShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledConvexHullShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledMeshShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledHeightFieldShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledStaticCompoundShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledMutableCompoundShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledTriangleShapeTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledPlaneShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledOffsetCenterOfMassShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, DynamicScaledShape)
 
@@ -250,12 +264,14 @@ static TestNameAndRTTI sScaledShapeTests[] =
 	{ "Capsule Shape",						JPH_RTTI(ScaledCapsuleShapeTest) },
 	{ "Tapered Capsule Shape",				JPH_RTTI(ScaledTaperedCapsuleShapeTest) },
 	{ "Cylinder Shape",						JPH_RTTI(ScaledCylinderShapeTest) },
+	{ "Tapered Cylinder Shape",				JPH_RTTI(ScaledTaperedCylinderShapeTest) },
 	{ "Convex Hull Shape",					JPH_RTTI(ScaledConvexHullShapeTest) },
 	{ "Mesh Shape",							JPH_RTTI(ScaledMeshShapeTest) },
 	{ "Height Field Shape",					JPH_RTTI(ScaledHeightFieldShapeTest) },
 	{ "Static Compound Shape",				JPH_RTTI(ScaledStaticCompoundShapeTest) },
 	{ "Mutable Compound Shape",				JPH_RTTI(ScaledMutableCompoundShapeTest) },
 	{ "Triangle Shape",						JPH_RTTI(ScaledTriangleShapeTest) },
+	{ "Plane Shape",						JPH_RTTI(ScaledPlaneShapeTest) },
 	{ "Offset Center Of Mass Shape",		JPH_RTTI(ScaledOffsetCenterOfMassShapeTest) },
 	{ "Dynamic Scaled Shape",				JPH_RTTI(DynamicScaledShape) }
 };
@@ -340,6 +356,7 @@ JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, SoftBodyCustomUpdateTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, SoftBodyLRAConstraintTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, SoftBodyBendConstraintTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, SoftBodySkinnedConstraintTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, SoftBodySensorTest)
 
 static TestNameAndRTTI sSoftBodyTests[] =
 {
@@ -358,7 +375,8 @@ static TestNameAndRTTI sSoftBodyTests[] =
 	{ "Soft Body Custom Update",		JPH_RTTI(SoftBodyCustomUpdateTest) },
 	{ "Soft Body LRA Constraint",		JPH_RTTI(SoftBodyLRAConstraintTest) },
 	{ "Soft Body Bend Constraint",		JPH_RTTI(SoftBodyBendConstraintTest) },
-	{ "Soft Body Skinned Constraint",	JPH_RTTI(SoftBodySkinnedConstraintTest) }
+	{ "Soft Body Skinned Constraint",	JPH_RTTI(SoftBodySkinnedConstraintTest) },
+	{ "Soft Body vs Sensor",			JPH_RTTI(SoftBodySensorTest) }
 };
 
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, BroadPhaseCastRayTest)
@@ -557,7 +575,8 @@ SamplesApp::SamplesApp()
 			mDebugUI->CreateSlider(probe_options, "Scale X", mShapeScale.GetX(), -5.0f, 5.0f, 0.1f, [this](float inValue) { mShapeScale.SetX(inValue); });
 			mDebugUI->CreateSlider(probe_options, "Scale Y", mShapeScale.GetY(), -5.0f, 5.0f, 0.1f, [this](float inValue) { mShapeScale.SetY(inValue); });
 			mDebugUI->CreateSlider(probe_options, "Scale Z", mShapeScale.GetZ(), -5.0f, 5.0f, 0.1f, [this](float inValue) { mShapeScale.SetZ(inValue); });
-			mDebugUI->CreateComboBox(probe_options, "Back Face Cull", { "On", "Off" }, (int)mBackFaceMode, [this](int inItem) { mBackFaceMode = (EBackFaceMode)inItem; });
+			mDebugUI->CreateComboBox(probe_options, "Back Face Cull Triangles", { "On", "Off" }, (int)mBackFaceModeTriangles, [this](int inItem) { mBackFaceModeTriangles = (EBackFaceMode)inItem; });
+			mDebugUI->CreateComboBox(probe_options, "Back Face Cull Convex", { "On", "Off" }, (int)mBackFaceModeConvex, [this](int inItem) { mBackFaceModeConvex = (EBackFaceMode)inItem; });
 			mDebugUI->CreateComboBox(probe_options, "Active Edge Mode", { "Only Active", "All" }, (int)mActiveEdgeMode, [this](int inItem) { mActiveEdgeMode = (EActiveEdgeMode)inItem; });
 			mDebugUI->CreateComboBox(probe_options, "Collect Faces Mode", { "Collect Faces", "No Faces" }, (int)mCollectFacesMode, [this](int inItem) { mCollectFacesMode = (ECollectFacesMode)inItem; });
 			mDebugUI->CreateSlider(probe_options, "Max Separation Distance", mMaxSeparationDistance, 0.0f, 5.0f, 0.1f, [this](float inValue) { mMaxSeparationDistance = inValue; });
@@ -1122,7 +1141,8 @@ bool SamplesApp::CastProbe(float inProbeLength, float &outFraction, RVec3 &outPo
 
 			// Create settings
 			RayCastSettings settings;
-			settings.mBackFaceMode = mBackFaceMode;
+			settings.mBackFaceModeTriangles = mBackFaceModeTriangles;
+			settings.mBackFaceModeConvex = mBackFaceModeConvex;
 			settings.mTreatConvexAsSolid = mTreatConvexAsSolid;
 
 			// Cast ray
@@ -1257,7 +1277,7 @@ bool SamplesApp::CastProbe(float inProbeLength, float &outFraction, RVec3 &outPo
 			// Create settings
 			CollideShapeSettings settings;
 			settings.mActiveEdgeMode = mActiveEdgeMode;
-			settings.mBackFaceMode = mBackFaceMode;
+			settings.mBackFaceMode = mBackFaceModeTriangles;
 			settings.mCollectFacesMode = mCollectFacesMode;
 			settings.mMaxSeparationDistance = mMaxSeparationDistance;
 
@@ -1346,8 +1366,8 @@ bool SamplesApp::CastProbe(float inProbeLength, float &outFraction, RVec3 &outPo
 			ShapeCastSettings settings;
 			settings.mUseShrunkenShapeAndConvexRadius = mUseShrunkenShapeAndConvexRadius;
 			settings.mActiveEdgeMode = mActiveEdgeMode;
-			settings.mBackFaceModeTriangles = mBackFaceMode;
-			settings.mBackFaceModeConvex = mBackFaceMode;
+			settings.mBackFaceModeTriangles = mBackFaceModeTriangles;
+			settings.mBackFaceModeConvex = mBackFaceModeConvex;
 			settings.mReturnDeepestPoint = mReturnDeepestPoint;
 			settings.mCollectFacesMode = mCollectFacesMode;
 
@@ -1449,31 +1469,32 @@ bool SamplesApp::CastProbe(float inProbeLength, float &outFraction, RVec3 &outPo
 
 	case EProbeMode::CollideSoftBody:
 		{
-			// Create a soft body vertex
 			const float fraction = 0.2f;
 			const float max_distance = 10.0f;
-			SoftBodyVertex vertex;
-			vertex.mInvMass = 1.0f;
-			vertex.mPosition = fraction * direction;
-			vertex.mVelocity = 10.0f * direction;
-			vertex.mCollidingShapeIndex = -1;
-			vertex.mLargestPenetration = -FLT_MAX;
+
+			// Create a soft body vertex iterator
+			const float inv_mass = 1.0f;
+			const Vec3 position = fraction * direction;
+			Plane largest_penetration_collision_plane;
+			float largest_penetration = -FLT_MAX;
+			int largest_penetration_colliding_shape_idx = -1;
+			CollideSoftBodyVertexIterator vertex_iterator(&position, &inv_mass, &largest_penetration_collision_plane, &largest_penetration, &largest_penetration_colliding_shape_idx);
 
 			// Get shapes in a large radius around the start position
-			AABox box(Vec3(start + vertex.mPosition), max_distance);
+			AABox box(Vec3(start + position), max_distance);
 			AllHitCollisionCollector<TransformedShapeCollector> collector;
 			mPhysicsSystem->GetNarrowPhaseQuery().CollectTransformedShapes(box, collector);
 
 			// Closest point found using CollideShape, position relative to 'start'
-			Vec3 closest_point = vertex.mPosition;
+			Vec3 closest_point = position;
 			float closest_point_penetration = 0;
 
 			// Test against each shape
 			for (const TransformedShape &ts : collector.mHits)
 			{
 				int colliding_shape_index = int(&ts - collector.mHits.data());
-				ts.mShape->CollideSoftBodyVertices((RMat44::sTranslation(-start) * ts.GetCenterOfMassTransform()).ToMat44(), ts.GetShapeScale(), &vertex, 1, 1.0f / 60.0f, Vec3::sZero(), colliding_shape_index);
-				if (vertex.mCollidingShapeIndex == colliding_shape_index)
+				ts.mShape->CollideSoftBodyVertices((RMat44::sTranslation(-start) * ts.GetCenterOfMassTransform()).ToMat44(), ts.GetShapeScale(), vertex_iterator, 1, colliding_shape_index);
+				if (largest_penetration_colliding_shape_idx == colliding_shape_index)
 				{
 					// To draw a plane, we need a point but CollideSoftBodyVertices doesn't provide one, so we use CollideShape with a tiny sphere to get the closest point and then project that onto the plane to draw the plane
 					SphereShape point_sphere(1.0e-6f);
@@ -1481,7 +1502,7 @@ bool SamplesApp::CastProbe(float inProbeLength, float &outFraction, RVec3 &outPo
 					CollideShapeSettings settings;
 					settings.mMaxSeparationDistance = sqrt(3.0f) * max_distance; // Box is extended in all directions by max_distance
 					ClosestHitCollisionCollector<CollideShapeCollector> collide_shape_collector;
-					ts.CollideShape(&point_sphere, Vec3::sReplicate(1.0f), RMat44::sTranslation(start + vertex.mPosition), settings, start, collide_shape_collector);
+					ts.CollideShape(&point_sphere, Vec3::sReplicate(1.0f), RMat44::sTranslation(start + position), settings, start, collide_shape_collector);
 					if (collide_shape_collector.HadHit())
 					{
 						closest_point = collide_shape_collector.mHit.mContactPointOn2;
@@ -1491,19 +1512,19 @@ bool SamplesApp::CastProbe(float inProbeLength, float &outFraction, RVec3 &outPo
 			}
 
 			// Draw test point
-			mDebugRenderer->DrawMarker(start + vertex.mPosition, Color::sYellow, 0.1f);
+			mDebugRenderer->DrawMarker(start + position, Color::sYellow, 0.1f);
 			mDebugRenderer->DrawMarker(start + closest_point, Color::sRed, 0.1f);
 
 			// Draw collision plane
-			if (vertex.mCollidingShapeIndex != -1)
+			if (largest_penetration_colliding_shape_idx != -1)
 			{
-				RVec3 plane_point = start + vertex.mPosition - vertex.mCollisionPlane.GetNormal() * vertex.mCollisionPlane.SignedDistance(vertex.mPosition);
-				mDebugRenderer->DrawPlane(plane_point, vertex.mCollisionPlane.GetNormal(), Color::sGreen, 2.0f);
+				RVec3 plane_point = start + position - largest_penetration_collision_plane.GetNormal() * largest_penetration_collision_plane.SignedDistance(position);
+				mDebugRenderer->DrawPlane(plane_point, largest_penetration_collision_plane.GetNormal(), Color::sGreen, 2.0f);
 
-				if (abs(closest_point_penetration - vertex.mLargestPenetration) > 0.001f)
-					mDebugRenderer->DrawText3D(plane_point, StringFormat("Pen %f (exp %f)", (double)vertex.mLargestPenetration, (double)closest_point_penetration));
+				if (abs(closest_point_penetration - largest_penetration) > 0.001f)
+					mDebugRenderer->DrawText3D(plane_point, StringFormat("Pen %f (exp %f)", (double)largest_penetration, (double)closest_point_penetration));
 				else
-					mDebugRenderer->DrawText3D(plane_point, StringFormat("Pen %f", (double)vertex.mLargestPenetration));
+					mDebugRenderer->DrawText3D(plane_point, StringFormat("Pen %f", (double)largest_penetration));
 			}
 		}
 		break;
@@ -2505,7 +2526,6 @@ void SamplesApp::GetInitialCamera(CameraState &ioState) const
 	// Default if the test doesn't override it
 	ioState.mPos = GetWorldScale() * RVec3(30, 10, 30);
 	ioState.mForward = -Vec3(ioState.mPos).Normalized();
-	ioState.mFarPlane = 1000.0f;
 
 	mTest->GetInitialCamera(ioState);
 }
