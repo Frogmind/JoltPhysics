@@ -170,6 +170,32 @@ void BroadPhaseBruteForce::CollideSphere(Vec3Arg inCenter, float inRadius, Colli
 	}
 }
 
+void BroadPhaseBruteForce::CollideAntiSphere(Vec3Arg inCenter, float inRadius, CollideShapeBodyCollector& ioCollector, const BroadPhaseLayerFilter& inBroadPhaseLayerFilter, const ObjectLayerFilter& inObjectLayerFilter) const {
+	shared_lock lock(mMutex);
+
+	float radius_sq = Square(inRadius);
+
+	// For all bodies
+	for (BodyID b : mBodyIDs)
+	{
+		const Body& body = mBodyManager->GetBody(b);
+
+		// Test layer
+		if (inObjectLayerFilter.ShouldCollide(body.GetObjectLayer()))
+		{
+			// Test intersection with box
+			const AABox& bounds = body.GetWorldSpaceBounds();
+			if (bounds.GetSqDistanceTo(inCenter) > radius_sq)
+			{
+				// Store hit
+				ioCollector.AddHit(b);
+				if (ioCollector.ShouldEarlyOut())
+					break;
+			}
+		}
+	}
+}
+
 void BroadPhaseBruteForce::CollidePoint(Vec3Arg inPoint, CollideShapeBodyCollector &ioCollector, const BroadPhaseLayerFilter &inBroadPhaseLayerFilter, const ObjectLayerFilter &inObjectLayerFilter) const
 {
 	shared_lock lock(mMutex);

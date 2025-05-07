@@ -201,6 +201,24 @@ JPH_INLINE Vec4 AABox4DistanceSqToPoint(Vec4Arg inPointX, Vec4Arg inPointY, Vec4
 	return Square(closest_x - inPointX) + Square(closest_y - inPointY) + Square(closest_z - inPointZ);
 }
 
+/// Get the squared outer distance between 4 AABoxes and a point
+JPH_INLINE Vec4 AABox4OuterDistanceSqToPoint(Vec4Arg inPointX, Vec4Arg inPointY, Vec4Arg inPointZ, Vec4Arg inBoxMinX, Vec4Arg inBoxMinY, Vec4Arg inBoxMinZ, Vec4Arg inBoxMaxX, Vec4Arg inBoxMaxY, Vec4Arg inBoxMaxZ)
+{
+	// Get furthest distance on box
+	const Vec4 distSqrX = Vec4::sMax(Square(inPointX - inBoxMinX), Square(inPointX - inBoxMaxX));
+	const Vec4 distSqrY = Vec4::sMax(Square(inPointY - inBoxMinY), Square(inPointY - inBoxMaxY));
+	const Vec4 distSqrZ = Vec4::sMax(Square(inPointZ - inBoxMinZ), Square(inPointZ - inBoxMaxZ));
+	return distSqrX + distSqrY + distSqrZ;
+}
+
+/// Test 4 AABoxes vs an anti sphere (get everything outside the sphere)
+JPH_INLINE UVec4 AABox4VsAntiSphere(Vec4Arg inCenterX, Vec4Arg inCenterY, Vec4Arg inCenterZ, Vec4Arg inRadiusSq, Vec4Arg inBoxMinX, Vec4Arg inBoxMinY, Vec4Arg inBoxMinZ, Vec4Arg inBoxMaxX, Vec4Arg inBoxMaxY, Vec4Arg inBoxMaxZ)
+{
+	// Test the distance from the center of the sphere to the box is smaller than the radius
+	Vec4 distance_sq = AABox4OuterDistanceSqToPoint(inCenterX, inCenterY, inCenterZ, inBoxMinX, inBoxMinY, inBoxMinZ, inBoxMaxX, inBoxMaxY, inBoxMaxZ);
+	return Vec4::sGreaterOrEqual(distance_sq, inRadiusSq);
+}
+
 /// Get the squared distance between 4 AABoxes and a point
 JPH_INLINE Vec4 AABox4DistanceSqToPoint(Vec3 inPoint, Vec4Arg inBoxMinX, Vec4Arg inBoxMinY, Vec4Arg inBoxMinZ, Vec4Arg inBoxMaxX, Vec4Arg inBoxMaxY, Vec4Arg inBoxMaxZ)
 {

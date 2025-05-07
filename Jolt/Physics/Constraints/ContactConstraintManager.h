@@ -319,7 +319,7 @@ private:
 	/// Define a map that maps SubShapeIDPair -> manifold
 	using ManifoldMap = LockFreeHashMap<SubShapeIDPair, CachedManifold>;
 	using MKeyValue = ManifoldMap::KeyValue;
-	using MKVAndCreated = pair<MKeyValue *, bool>;
+	using MKVAndCreated = std::pair<MKeyValue *, bool>;
 
 	/// Start of list of contact points for a particular pair of bodies
 	class CachedBodyPair
@@ -474,6 +474,14 @@ private:
 		WorldContactPoints		mContactPoints;
 	};
 
+public:
+	/// The maximum value that can be passed to Init for inMaxContactConstraints. Note you should really use a lower value, using this value will cost a lot of memory!
+	static constexpr uint		cMaxContactConstraintsLimit = ~uint(0) / sizeof(ContactConstraint);
+
+	/// The maximum value that can be passed to Init for inMaxBodyPairs. Note you should really use a lower value, using this value will cost a lot of memory!
+	static constexpr uint		cMaxBodyPairsLimit = ~uint(0) / sizeof(BodyPairMap::KeyValue);
+
+private:
 	/// Internal helper function to calculate the friction and non-penetration constraint properties. Templated to the motion type to reduce the amount of branches and calculations.
 	template <EMotionType Type1, EMotionType Type2>
 	JPH_INLINE void				TemplatedCalculateFrictionAndNonPenetrationConstraintProperties(ContactConstraint &ioConstraint, const ContactSettings &inSettings, float inDeltaTime, Vec3Arg inGravityDeltaTime, RMat44Arg inTransformBody1, RMat44Arg inTransformBody2, const Body &inBody1, const Body &inBody2);

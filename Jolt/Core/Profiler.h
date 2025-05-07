@@ -19,8 +19,8 @@ JPH_NAMESPACE_BEGIN
 
 #ifdef JPH_SHARED_LIBRARY
 /// Functions called when a profiler measurement starts or stops, need to be overridden by the user.
-using ProfileStartMeasurementFunction = void (*)(const char *inName, uint32 inColor, uint8 *ioUserData);
-using ProfileEndMeasurementFunction = void (*)(uint8 *ioUserData);
+using ProfileStartMeasurementFunction = void (*)(const char* inName, uint32 inColor, uint8* ioUserData);
+using ProfileEndMeasurementFunction = void (*)(uint8* ioUserData);
 
 JPH_EXPORT extern ProfileStartMeasurementFunction ProfileStartMeasurement;
 JPH_EXPORT extern ProfileEndMeasurementFunction ProfileEndMeasurement;
@@ -36,11 +36,11 @@ class alignas(16) ExternalProfileMeasurement : public NonCopyable
 public:
 	/// Constructor
 #ifdef JPH_SHARED_LIBRARY
-	JPH_INLINE						ExternalProfileMeasurement(const char *inName, uint32 inColor = 0) { ProfileStartMeasurement(inName, inColor, mUserData); }
+	JPH_INLINE						ExternalProfileMeasurement(const char* inName, uint32 inColor = 0) { ProfileStartMeasurement(inName, inColor, mUserData); }
 	JPH_INLINE						~ExternalProfileMeasurement() { ProfileEndMeasurement(mUserData); }
 #else
-									ExternalProfileMeasurement(const char *inName, uint32 inColor = 0);
-									~ExternalProfileMeasurement();
+	ExternalProfileMeasurement(const char* inName, uint32 inColor = 0);
+	~ExternalProfileMeasurement();
 #endif
 
 private:
@@ -97,32 +97,32 @@ class JPH_EXPORT Profiler : public NonCopyable
 public:
 	JPH_OVERRIDE_NEW_DELETE
 
-	/// Constructor
-								Profiler()															{ UpdateReferenceTime(); }
+		/// Constructor
+		Profiler() { UpdateReferenceTime(); }
 
 	/// Increments the frame counter to provide statistics per frame
 	void						NextFrame();
 
 	/// Dump profiling statistics at the start of the next frame
 	/// @param inTag If not empty, this overrides the auto incrementing number in the filename of the dump file
-	void						Dump(const string_view &inTag = string_view());
+	void						Dump(const string_view& inTag = string_view());
 
 	/// Add a thread to be instrumented
-	void						AddThread(ProfileThread *inThread);
+	void						AddThread(ProfileThread* inThread);
 
 	/// Remove a thread from being instrumented
-	void						RemoveThread(ProfileThread *inThread);
+	void						RemoveThread(ProfileThread* inThread);
 
 	/// Singleton instance
-	static Profiler *			sInstance;
+	static Profiler* sInstance;
 
 private:
 	/// Helper class to freeze ProfileSamples per thread while processing them
 	struct ThreadSamples
 	{
 		String					mThreadName;
-		ProfileSample *			mSamplesBegin;
-		ProfileSample *			mSamplesEnd;
+		ProfileSample* mSamplesBegin;
+		ProfileSample* mSamplesEnd;
 	};
 
 	/// Helper class to aggregate ProfileSamples
@@ -130,7 +130,7 @@ private:
 	{
 	public:
 		/// Constructor
-								Aggregator(const char *inName)										: mName(inName) { }
+		Aggregator(const char* inName) : mName(inName) {}
 
 		/// Accumulate results for a measurement
 		void					AccumulateMeasurement(uint64 inCyclesInCallWithChildren)
@@ -142,13 +142,13 @@ private:
 		}
 
 		/// Sort descending by total cycles
-		bool					operator < (const Aggregator &inRHS) const
+		bool					operator < (const Aggregator& inRHS) const
 		{
 			return mTotalCyclesInCallWithChildren > inRHS.mTotalCyclesInCallWithChildren;
 		}
 
 		/// Identification
-		const char *			mName;																///< User defined name of this item
+		const char* mName;																///< User defined name of this item
 
 		/// Statistics
 		uint32					mCallCounter = 0;													///< Number of times AccumulateMeasurement was called
@@ -159,10 +159,10 @@ private:
 
 	using Threads = Array<ThreadSamples>;
 	using Aggregators = Array<Aggregator>;
-	using KeyToAggregator = UnorderedMap<const char *, size_t>;
+	using KeyToAggregator = UnorderedMap<const char*, size_t>;
 
 	/// Helper function to aggregate profile sample data
-	static void					sAggregate(int inDepth, uint32 inColor, ProfileSample *&ioSample, const ProfileSample *inEnd, Aggregators &ioAggregators, KeyToAggregator &ioKeyToAggregator);
+	static void					sAggregate(int inDepth, uint32 inColor, ProfileSample*& ioSample, const ProfileSample* inEnd, Aggregators& ioAggregators, KeyToAggregator& ioKeyToAggregator);
 
 	/// We measure the amount of ticks per second, this function resets the reference time point
 	void						UpdateReferenceTime();
@@ -172,12 +172,12 @@ private:
 
 	/// Dump profiling statistics
 	void						DumpInternal();
-	void						DumpChart(const char *inTag, const Threads &inThreads, const KeyToAggregator &inKeyToAggregators, const Aggregators &inAggregators);
+	void						DumpChart(const char* inTag, const Threads& inThreads, const KeyToAggregator& inKeyToAggregators, const Aggregators& inAggregators);
 
 	std::mutex					mLock;																///< Lock that protects mThreads
 	uint64						mReferenceTick;														///< Tick count at the start of the frame
 	std::chrono::high_resolution_clock::time_point mReferenceTime;									///< Time at the start of the frame
-	Array<ProfileThread *>		mThreads;															///< List of all active threads
+	Array<ProfileThread*>		mThreads;															///< List of all active threads
 	bool						mDump = false;														///< When true, the samples are dumped next frame
 	String						mDumpTag;															///< When not empty, this overrides the auto incrementing number of the dump filename
 };
@@ -188,7 +188,7 @@ class alignas(16) JPH_EXPORT_GCC_BUG_WORKAROUND ProfileSample : public NonCopyab
 public:
 	JPH_OVERRIDE_NEW_DELETE
 
-	const char *				mName;																///< User defined name of this item
+	const char* mName;																///< User defined name of this item
 	uint32						mColor;																///< Color to use for this sample
 	uint8						mDepth;																///< Calculated depth
 	uint8						mUnused[3];
@@ -202,8 +202,8 @@ class ProfileThread : public NonCopyable
 public:
 	JPH_OVERRIDE_NEW_DELETE
 
-	/// Constructor
-	inline						ProfileThread(const string_view &inThreadName);
+		/// Constructor
+		inline						ProfileThread(const string_view& inThreadName);
 	inline						~ProfileThread();
 
 	static const uint cMaxSamples = 65536;
@@ -213,14 +213,14 @@ public:
 	uint						mCurrentSample = 0;													///< Next position to write a sample to
 
 #ifdef JPH_SHARED_LIBRARY
-	JPH_EXPORT static void		sSetInstance(ProfileThread *inInstance);
-	JPH_EXPORT static ProfileThread *sGetInstance();
+	JPH_EXPORT static void		sSetInstance(ProfileThread* inInstance);
+	JPH_EXPORT static ProfileThread* sGetInstance();
 #else
-	static inline void			sSetInstance(ProfileThread *inInstance)								{ sInstance = inInstance; }
-	static inline ProfileThread *sGetInstance()														{ return sInstance; }
+	static inline void			sSetInstance(ProfileThread* inInstance) { sInstance = inInstance; }
+	static inline ProfileThread* sGetInstance() { return sInstance; }
 
 private:
-	static thread_local ProfileThread *sInstance;
+	static thread_local ProfileThread* sInstance;
 #endif
 };
 
@@ -229,11 +229,11 @@ class JPH_EXPORT ProfileMeasurement : public NonCopyable
 {
 public:
 	/// Constructor
-	inline						ProfileMeasurement(const char *inName, uint32 inColor = 0);
+	inline						ProfileMeasurement(const char* inName, uint32 inColor = 0);
 	inline						~ProfileMeasurement();
 
 private:
-	ProfileSample *				mSample;
+	ProfileSample* mSample;
 	ProfileSample				mTemp;
 
 	static bool					sOutOfSamplesReported;

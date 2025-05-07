@@ -38,6 +38,9 @@ public:
 	/// Vector with all zeros
 	static JPH_INLINE Vec4		sZero();
 
+	/// Vector with all ones
+	static JPH_INLINE Vec4		sOne();
+
 	/// Vector with all NaN's
 	static JPH_INLINE Vec4		sNaN();
 
@@ -135,6 +138,9 @@ public:
 
 	/// Test if two vectors are close
 	JPH_INLINE bool				IsClose(Vec4Arg inV2, float inMaxDistSq = 1.0e-12f) const;
+
+	/// Test if vector is near zero
+	JPH_INLINE bool				IsNearZero(float inMaxDistSq = 1.0e-12f) const;
 
 	/// Test if vector is normalized
 	JPH_INLINE bool				IsNormalized(float inTolerance = 1.0e-6f) const;
@@ -276,7 +282,7 @@ public:
 	};
 };
 
-static_assert(is_trivial<Vec4>(), "Is supposed to be a trivial type!");
+static_assert(std::is_trivial<Vec4>(), "Is supposed to be a trivial type!");
 
 JPH_NAMESPACE_END
 

@@ -29,6 +29,7 @@ class TwoBodyConstraintSettings;
 class TwoBodyConstraint;
 class BroadPhaseLayerFilter;
 class AABox;
+class CollisionGroup;
 
 /// Class that provides operations on bodies using a body ID. Note that if you need to do multiple operations on a single body, it is more efficient to lock the body once and combine the operations.
 /// All quantities are in world space unless otherwise specified.
@@ -274,6 +275,12 @@ public:
 	bool						GetUseManifoldReduction(const BodyID &inBodyID) const;
 	///@}
 
+	///@name Collision group
+	///@{
+	void						SetCollisionGroup(const BodyID &inBodyID, const CollisionGroup &inCollisionGroup);
+	const CollisionGroup &		GetCollisionGroup(const BodyID &inBodyID) const;
+	///@}
+
 	/// Get transform and shape for this body, used to perform collision detection
 	TransformedShape			GetTransformedShape(const BodyID &inBodyID) const;
 
@@ -287,8 +294,7 @@ public:
 	/// Set the Body::EFlags::InvalidateContactCache flag for the specified body. This means that the collision cache is invalid for any body pair involving that body until the next physics step.
 	void						InvalidateContactCache(const BodyID &inBodyID);
 	JPH::CollisionGroup GetCollisionGroup(const BodyID& inBodyID);
-	void SetCollisionGroup(const BodyID& inBodyID, JPH::CollisionGroup inGroup);
-
+	
 private:
 	/// Helper function to activate a single body
 	JPH_INLINE void				ActivateBodyInternal(Body &ioBody) const;

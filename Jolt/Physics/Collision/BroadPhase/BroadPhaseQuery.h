@@ -40,6 +40,9 @@ public:
 	/// Get bodies intersecting with a sphere and any hits to ioCollector
 	virtual void		CollideSphere(Vec3Arg inCenter, float inRadius, CollideShapeBodyCollector &ioCollector, const BroadPhaseLayerFilter &inBroadPhaseLayerFilter = { }, const ObjectLayerFilter &inObjectLayerFilter = { }) const = 0;
 
+	/// Get bodies intersecting with an anti sphere (everything outside a sphere)
+	virtual void		CollideAntiSphere(Vec3Arg inCenter, float inRadius, CollideShapeBodyCollector& ioCollector, const BroadPhaseLayerFilter& inBroadPhaseLayerFilter = { }, const ObjectLayerFilter& inObjectLayerFilter = {}) const = 0;
+
 	/// Get bodies intersecting with a point and any hits to ioCollector
 	virtual void		CollidePoint(Vec3Arg inPoint, CollideShapeBodyCollector &ioCollector, const BroadPhaseLayerFilter &inBroadPhaseLayerFilter = { }, const ObjectLayerFilter &inObjectLayerFilter = { }) const = 0;
 

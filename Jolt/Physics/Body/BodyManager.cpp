@@ -568,7 +568,12 @@ void BodyManager::ActivateBodies(const BodyID *inBodyIDs, int inNumber)
 			Body &body = *mBodies[body_id.GetIndex()];
 
 			JPH_ASSERT(body.GetID() == body_id);
-			JPH_ASSERT(body.IsInBroadPhase(), "Use BodyInterface::AddBody to add the body first!");
+			// JPH_ASSERT(body.IsInBroadPhase(), "Use BodyInterface::AddBody to add the body first!");
+
+			// NOTE: In hypehype, it is possible that some bodies are taken out in
+			//       run-time for performance reasons. Not a bug, no assertion.
+			if (!body.IsInBroadPhase())
+				continue;
 
 			if (!body.IsStatic())
 			{
@@ -1112,7 +1117,211 @@ void BodyManager::Draw(const DrawSettings &inDrawSettings, const PhysicsSettings
 	for (const Body *body : mBodies)
 		if (sIsValidBodyPointer(body) && body->IsInBroadPhase() && (!inBodyFilter || inBodyFilter->ShouldDraw(*body)))
 		{
-			Draw(inDrawSettings, inPhysicsSettings, inRenderer, body);
+			JPH_ASSERT(mBodies[body->GetID().GetIndex()] == body);
+
+			bool is_sensor = body->IsSensor();
+
+			// Determine drawing mode
+			Color color;
+			if (is_sensor)
+				color = Color::sYellow;
+			else
+				switch (inDrawSettings.mDrawShapeColor)
+				{
+				case EShapeColor::InstanceColor:
+					// Each instance has own color
+					color = Color::sGetDistinctColor(body->mID.GetIndex());
+					break;
+
+				case EShapeColor::ShapeTypeColor:
+					color = ShapeFunctions::sGet(body->GetShape()->GetSubType()).mColor;
+					break;
+
+				case EShapeColor::MotionTypeColor:
+					// Determine color based on motion type
+					switch (body->mMotionType)
+					{
+					case EMotionType::Static:
+						color = Color::sGrey;
+						break;
+
+					case EMotionType::Kinematic:
+						color = Color::sGreen;
+						break;
+
+					case EMotionType::Dynamic:
+						color = Color::sGetDistinctColor(body->mID.GetIndex());
+						break;
+
+					default:
+						JPH_ASSERT(false);
+						color = Color::sBlack;
+						break;
+					}
+					break;
+
+				case EShapeColor::SleepColor:
+					// Determine color based on motion type
+					switch (body->mMotionType)
+					{
+					case EMotionType::Static:
+						color = Color::sGrey;
+						break;
+
+					case EMotionType::Kinematic:
+						color = body->IsActive()? Color::sGreen : Color::sRed;
+						break;
+
+					case EMotionType::Dynamic:
+						color = body->IsActive()? Color::sYellow : Color::sRed;
+						break;
+
+					default:
+						JPH_ASSERT(false);
+						color = Color::sBlack;
+						break;
+					}
+					break;
+
+				case EShapeColor::IslandColor:
+					// Determine color based on motion type
+					switch (body->mMotionType)
+					{
+					case EMotionType::Static:
+						color = Color::sGrey;
+						break;
+
+					case EMotionType::Kinematic:
+					case EMotionType::Dynamic:
+						{
+							uint32 idx = body->GetMotionProperties()->GetIslandIndexInternal();
+							color = idx != Body::cInactiveIndex? Color::sGetDistinctColor(idx) : Color::sLightGrey;
+						}
+						break;
+
+					default:
+						JPH_ASSERT(false);
+						color = Color::sBlack;
+						break;
+					}
+					break;
+
+				case EShapeColor::MaterialColor:
+					color = Color::sWhite;
+					break;
+
+				default:
+					JPH_ASSERT(false);
+					color = Color::sBlack;
+					break;
+				}
+
+			// Draw the results of GetSupportFunction
+			if (inDrawSettings.mDrawGetSupportFunction)
+				body->mShape->DrawGetSupportFunction(inRenderer, body->GetCenterOfMassTransform(), Vec3::sOne(), color, inDrawSettings.mDrawSupportDirection);
+
+			// Draw the results of GetSupportingFace
+			if (inDrawSettings.mDrawGetSupportingFace)
+				body->mShape->DrawGetSupportingFace(inRenderer, body->GetCenterOfMassTransform(), Vec3::sOne());
+
+			// Draw the shape
+			if (inDrawSettings.mDrawShape)
+				body->mShape->Draw(inRenderer, body->GetCenterOfMassTransform(), Vec3::sOne(), color, inDrawSettings.mDrawShapeColor == EShapeColor::MaterialColor, inDrawSettings.mDrawShapeWireframe || is_sensor);
+
+			// Draw bounding box
+			if (inDrawSettings.mDrawBoundingBox)
+				inRenderer->DrawWireBox(body->mBounds, color);
+
+			// Draw center of mass transform
+			if (inDrawSettings.mDrawCenterOfMassTransform)
+				inRenderer->DrawCoordinateSystem(body->GetCenterOfMassTransform(), 0.2f);
+
+			// Draw world transform
+			if (inDrawSettings.mDrawWorldTransform)
+				inRenderer->DrawCoordinateSystem(body->GetWorldTransform(), 0.2f);
+
+			// Draw world space linear and angular velocity
+			if (inDrawSettings.mDrawVelocity)
+			{
+				RVec3 pos = body->GetCenterOfMassPosition();
+				inRenderer->DrawArrow(pos, pos + body->GetLinearVelocity(), Color::sGreen, 0.1f);
+				inRenderer->DrawArrow(pos, pos + body->GetAngularVelocity(), Color::sRed, 0.1f);
+			}
+
+			if (inDrawSettings.mDrawMassAndInertia && body->IsDynamic())
+			{
+				const MotionProperties *mp = body->GetMotionProperties();
+				if (mp->GetInverseMass() > 0.0f
+					&& !Vec3::sEquals(mp->GetInverseInertiaDiagonal(), Vec3::sZero()).TestAnyXYZTrue())
+				{
+					// Invert mass again
+					float mass = 1.0f / mp->GetInverseMass();
+
+					// Invert diagonal again
+					Vec3 diagonal = mp->GetInverseInertiaDiagonal().Reciprocal();
+
+					// Determine how big of a box has the equivalent inertia
+					Vec3 box_size = MassProperties::sGetEquivalentSolidBoxSize(mass, diagonal);
+
+					// Draw box with equivalent inertia
+					inRenderer->DrawWireBox(body->GetCenterOfMassTransform() * Mat44::sRotation(mp->GetInertiaRotation()), AABox(-0.5f * box_size, 0.5f * box_size), Color::sOrange);
+
+					// Draw mass
+					inRenderer->DrawText3D(body->GetCenterOfMassPosition(), StringFormat("%.2f", (double)mass), Color::sOrange, 0.2f);
+				}
+			}
+
+			if (inDrawSettings.mDrawSleepStats && body->IsDynamic() && body->IsActive())
+			{
+				// Draw stats to know which bodies could go to sleep
+				String text = StringFormat("t: %.1f", (double)body->mMotionProperties->mSleepTestTimer);
+				uint8 g = uint8(Clamp(255.0f * body->mMotionProperties->mSleepTestTimer / inPhysicsSettings.mTimeBeforeSleep, 0.0f, 255.0f));
+				Color sleep_color = Color(0, 255 - g, g);
+				inRenderer->DrawText3D(body->GetCenterOfMassPosition(), text, sleep_color, 0.2f);
+				for (int i = 0; i < 3; ++i)
+					inRenderer->DrawWireSphere(JPH_IF_DOUBLE_PRECISION(body->mMotionProperties->GetSleepTestOffset() +) body->mMotionProperties->mSleepTestSpheres[i].GetCenter(), body->mMotionProperties->mSleepTestSpheres[i].GetRadius(), sleep_color);
+			}
+
+			if (body->IsSoftBody())
+			{
+				const SoftBodyMotionProperties *mp = static_cast<const SoftBodyMotionProperties *>(body->GetMotionProperties());
+				RMat44 com = body->GetCenterOfMassTransform();
+
+				if (inDrawSettings.mDrawSoftBodyVertices)
+					mp->DrawVertices(inRenderer, com);
+
+				/*
+				if (inDrawSettings.mDrawSoftBodyVertexVelocities)
+					mp->DrawVertexVelocities(inRenderer, com);
+				*/
+
+				if (inDrawSettings.mDrawSoftBodyEdgeConstraints)
+					mp->DrawEdgeConstraints(inRenderer, com, inDrawSettings.mDrawSoftBodyConstraintColor);
+
+				if (inDrawSettings.mDrawSoftBodyRods)
+					mp->DrawRods(inRenderer, com, inDrawSettings.mDrawSoftBodyConstraintColor);
+
+				if (inDrawSettings.mDrawSoftBodyRodStates)
+					mp->DrawRodStates(inRenderer, com, inDrawSettings.mDrawSoftBodyConstraintColor);
+
+				if (inDrawSettings.mDrawSoftBodyRodBendTwistConstraints)
+					mp->DrawRodBendTwistConstraints(inRenderer, com, inDrawSettings.mDrawSoftBodyConstraintColor);
+
+				if (inDrawSettings.mDrawSoftBodyBendConstraints)
+					mp->DrawBendConstraints(inRenderer, com, inDrawSettings.mDrawSoftBodyConstraintColor);
+
+				if (inDrawSettings.mDrawSoftBodyVolumeConstraints)
+					mp->DrawVolumeConstraints(inRenderer, com, inDrawSettings.mDrawSoftBodyConstraintColor);
+
+				if (inDrawSettings.mDrawSoftBodySkinConstraints)
+					mp->DrawSkinConstraints(inRenderer, com, inDrawSettings.mDrawSoftBodyConstraintColor);
+
+				if (inDrawSettings.mDrawSoftBodyLRAConstraints)
+					mp->DrawLRAConstraints(inRenderer, com, inDrawSettings.mDrawSoftBodyConstraintColor);
+
+				if (inDrawSettings.mDrawSoftBodyPredictedBounds)
+					mp->DrawPredictedBounds(inRenderer, com);
+			}
 		}
 
 	UnlockAllBodies();
@@ -1152,9 +1361,7 @@ void BodyManager::ValidateActiveBodyBounds()
 		for (BodyID *id = mActiveBodies[type], *id_end = mActiveBodies[type] + mNumActiveBodies[type].load(memory_order_relaxed); id < id_end; ++id)
 		{
 			const Body *body = mBodies[id->GetIndex()];
-			AABox cached = body->GetWorldSpaceBounds();
-			AABox calculated = body->GetShape()->GetWorldSpaceBounds(body->GetCenterOfMassTransform(), Vec3::sReplicate(1.0f));
-			JPH_ASSERT(cached == calculated);
+			body->ValidateCachedBounds();
 		}
 }
 #endif // JPH_DEBUG

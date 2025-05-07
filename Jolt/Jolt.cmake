@@ -17,6 +17,7 @@ set(JOLT_PHYSICS_SRC_FILES
 	${JOLT_PHYSICS_ROOT}/Core/ARMNeon.h
 	${JOLT_PHYSICS_ROOT}/Core/Array.h
 	${JOLT_PHYSICS_ROOT}/Core/Atomics.h
+	${JOLT_PHYSICS_ROOT}/Core/BinaryHeap.h
 	${JOLT_PHYSICS_ROOT}/Core/ByteBuffer.h
 	${JOLT_PHYSICS_ROOT}/Core/Color.cpp
 	${JOLT_PHYSICS_ROOT}/Core/Color.h
@@ -29,6 +30,7 @@ set(JOLT_PHYSICS_SRC_FILES
 	${JOLT_PHYSICS_ROOT}/Core/FPException.h
 	${JOLT_PHYSICS_ROOT}/Core/FPFlushDenormals.h
 	${JOLT_PHYSICS_ROOT}/Core/HashCombine.h
+	${JOLT_PHYSICS_ROOT}/Core/HashTable.h
 	${JOLT_PHYSICS_ROOT}/Core/InsertionSort.h
 	${JOLT_PHYSICS_ROOT}/Core/IssueReporting.cpp
 	${JOLT_PHYSICS_ROOT}/Core/IssueReporting.h
@@ -63,6 +65,7 @@ set(JOLT_PHYSICS_SRC_FILES
 	${JOLT_PHYSICS_ROOT}/Core/StaticArray.h
 	${JOLT_PHYSICS_ROOT}/Core/STLAlignedAllocator.h
 	${JOLT_PHYSICS_ROOT}/Core/STLAllocator.h
+	${JOLT_PHYSICS_ROOT}/Core/STLLocalAllocator.h
 	${JOLT_PHYSICS_ROOT}/Core/STLTempAllocator.h
 	${JOLT_PHYSICS_ROOT}/Core/StreamIn.h
 	${JOLT_PHYSICS_ROOT}/Core/StreamOut.h
@@ -105,6 +108,8 @@ set(JOLT_PHYSICS_SRC_FILES
 	${JOLT_PHYSICS_ROOT}/Geometry/Triangle.h
 	${JOLT_PHYSICS_ROOT}/Jolt.cmake
 	${JOLT_PHYSICS_ROOT}/Jolt.h
+	${JOLT_PHYSICS_ROOT}/Math/BVec16.h
+	${JOLT_PHYSICS_ROOT}/Math/BVec16.inl
 	${JOLT_PHYSICS_ROOT}/Math/DMat44.h
 	${JOLT_PHYSICS_ROOT}/Math/DMat44.inl
 	${JOLT_PHYSICS_ROOT}/Math/Double3.h
@@ -174,6 +179,7 @@ set(JOLT_PHYSICS_SRC_FILES
 	${JOLT_PHYSICS_ROOT}/Physics/Character/Character.h
 	${JOLT_PHYSICS_ROOT}/Physics/Character/CharacterBase.cpp
 	${JOLT_PHYSICS_ROOT}/Physics/Character/CharacterBase.h
+	${JOLT_PHYSICS_ROOT}/Physics/Character/CharacterID.h
 	${JOLT_PHYSICS_ROOT}/Physics/Character/CharacterVirtual.cpp
 	${JOLT_PHYSICS_ROOT}/Physics/Character/CharacterVirtual.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/AABoxCast.h
@@ -204,6 +210,7 @@ set(JOLT_PHYSICS_SRC_FILES
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/CollideConvexVsTriangles.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/CollidePointResult.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/CollideShape.h
+	${JOLT_PHYSICS_ROOT}/Physics/Collision/CollideShapeVsShapePerLeaf.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/CollideSoftBodyVertexIterator.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/CollideSoftBodyVerticesVsTriangles.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/CollideSphereVsTriangles.cpp
@@ -287,6 +294,8 @@ set(JOLT_PHYSICS_SRC_FILES
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/Shape/TriangleShape.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/ShapeCast.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/ShapeFilter.h
+	${JOLT_PHYSICS_ROOT}/Physics/Collision/SimShapeFilter.h
+	${JOLT_PHYSICS_ROOT}/Physics/Collision/SimShapeFilterWrapper.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/SortReverseAndStore.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/TransformedShape.cpp
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/TransformedShape.h
@@ -419,23 +428,12 @@ set(JOLT_PHYSICS_SRC_FILES
 	${JOLT_PHYSICS_ROOT}/Skeleton/SkeletonMapper.h
 	${JOLT_PHYSICS_ROOT}/Skeleton/SkeletonPose.cpp
 	${JOLT_PHYSICS_ROOT}/Skeleton/SkeletonPose.h
-	${JOLT_PHYSICS_ROOT}/TriangleGrouper/TriangleGrouper.h
-	${JOLT_PHYSICS_ROOT}/TriangleGrouper/TriangleGrouperClosestCentroid.cpp
-	${JOLT_PHYSICS_ROOT}/TriangleGrouper/TriangleGrouperClosestCentroid.h
-	${JOLT_PHYSICS_ROOT}/TriangleGrouper/TriangleGrouperMorton.cpp
-	${JOLT_PHYSICS_ROOT}/TriangleGrouper/TriangleGrouperMorton.h
 	${JOLT_PHYSICS_ROOT}/TriangleSplitter/TriangleSplitter.cpp
 	${JOLT_PHYSICS_ROOT}/TriangleSplitter/TriangleSplitter.h
 	${JOLT_PHYSICS_ROOT}/TriangleSplitter/TriangleSplitterBinning.cpp
 	${JOLT_PHYSICS_ROOT}/TriangleSplitter/TriangleSplitterBinning.h
-	${JOLT_PHYSICS_ROOT}/TriangleSplitter/TriangleSplitterFixedLeafSize.cpp
-	${JOLT_PHYSICS_ROOT}/TriangleSplitter/TriangleSplitterFixedLeafSize.h
-	${JOLT_PHYSICS_ROOT}/TriangleSplitter/TriangleSplitterLongestAxis.cpp
-	${JOLT_PHYSICS_ROOT}/TriangleSplitter/TriangleSplitterLongestAxis.h
 	${JOLT_PHYSICS_ROOT}/TriangleSplitter/TriangleSplitterMean.cpp
 	${JOLT_PHYSICS_ROOT}/TriangleSplitter/TriangleSplitterMean.h
-	${JOLT_PHYSICS_ROOT}/TriangleSplitter/TriangleSplitterMorton.cpp
-	${JOLT_PHYSICS_ROOT}/TriangleSplitter/TriangleSplitterMorton.h
 )
 
 if (ENABLE_OBJECT_STREAM)
@@ -470,6 +468,7 @@ source_group(TREE ${JOLT_PHYSICS_ROOT} FILES ${JOLT_PHYSICS_SRC_FILES})
 
 # Create Jolt lib
 add_library(Jolt ${JOLT_PHYSICS_SRC_FILES})
+add_library(Jolt::Jolt ALIAS Jolt)
 
 if (BUILD_SHARED_LIBS)
 	# Set default visibility to hidden
@@ -576,10 +575,15 @@ elseif (DEBUG_RENDERER_IN_DEBUG_AND_RELEASE)
 endif()
 
 # Enable the profiler
+if (JPH_USE_EXTERNAL_PROFILE)
+	set(JOLT_PROFILE_DEFINE JPH_EXTERNAL_PROFILE)
+else()
+	set(JOLT_PROFILE_DEFINE JPH_PROFILE_ENABLED)
+endif()
 if (PROFILER_IN_DISTRIBUTION)
-	target_compile_definitions(Jolt PUBLIC "JPH_PROFILE_ENABLED")
+	target_compile_definitions(Jolt PUBLIC "${JOLT_PROFILE_DEFINE}")
 elseif (PROFILER_IN_DEBUG_AND_RELEASE)
-	target_compile_definitions(Jolt PUBLIC "$<$<CONFIG:Debug,Release,ReleaseASAN,ReleaseUBSAN,ReleaseTSAN>:JPH_PROFILE_ENABLED>")
+	target_compile_definitions(Jolt PUBLIC "$<$<CONFIG:Debug,Release,ReleaseASAN,ReleaseUBSAN,ReleaseTSAN>:${JOLT_PROFILE_DEFINE}>")
 endif()
 
 # Compile the ObjectStream class and RTTI attribute information
@@ -642,6 +646,10 @@ else()
 			# Note that this does not require the browser to actually support SSE 4.2 it merely means that it can translate those instructions to WASM SIMD instructions
 			target_compile_options(Jolt PUBLIC -msimd128 -msse4.2)
 		endif()
+		if (JPH_USE_WASM64)
+			target_compile_options(Jolt PUBLIC -sMEMORY64)
+			target_link_options(Jolt PUBLIC -sMEMORY64)
+		endif()
 	elseif ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i386")
 		# x86 and x86_64
 		# On 32-bit builds we need to default to using SSE instructions, the x87 FPU instructions have higher intermediate precision
@@ -688,8 +696,10 @@ if (NOT ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows") AND NOT EMSCRIPTEN)
 	#target_link_options(Jolt PUBLIC -pthread)
 endif()
 
-#if (EMSCRIPTEN)
+if (EMSCRIPTEN)
 	# We need more than the default 64KB stack and 16MB memory
+	# In your application, specify at least -sSTACK_SIZE=1048576 -sINITIAL_MEMORY=134217728
 	# Also disable warning: running limited binaryen optimizations because DWARF info requested (or indirectly required)
-	#target_link_options(Jolt PUBLIC -sSTACK_SIZE=1048576 -sINITIAL_MEMORY=134217728 -Wno-limited-postlink-optimizations)
-#endif()
+	target_link_options(Jolt PUBLIC -sSTACK_SIZE=1048576 -sINITIAL_MEMORY=134217728 -Wno-limited-postlink-optimizations)
+	#target_link_options(Jolt PUBLIC -Wno-limited-postlink-optimizations)
+endif()

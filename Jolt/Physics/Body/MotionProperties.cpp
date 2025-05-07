@@ -11,7 +11,7 @@ JPH_NAMESPACE_BEGIN
 
 void MotionProperties::SetMassPropertiesForStatic()
 {
-	mAllowedDOFs = EAllowedDOFs::None;
+	mAllowedDOFs = EAllowedDOFs::All;
 	mInvMass = 0.0f;
 	mInvInertiaDiagonal = Vec3::sZero();
 	mInertiaRotation = Quat::sIdentity();

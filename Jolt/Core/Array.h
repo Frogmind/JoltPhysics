@@ -39,35 +39,90 @@ public:
 	using allocator_type = Allocator;
 	using size_type = size_t;
 	using difference_type = typename Allocator::difference_type;
-	using pointer = T *;
-	using const_pointer = const T *;
-	using reference = T &;
-	using const_reference = const T &;
+	using pointer = T*;
+	using const_pointer = const T*;
+	using reference = T&;
+	using const_reference = const T&;
 
-	using const_iterator = const T *;
-	using iterator = T *;
+	using const_iterator = const T*;
+	using iterator = T*;
 
-	struct reverse_iterator_t {
-		iterator value;
+	/// An iterator that traverses the array in reverse order
+	class rev_it
+	{
+	public:
+		/// Constructor
+		rev_it() = default;
+		explicit			rev_it(T* inValue) : mValue(inValue) {}
 
-		reverse_iterator_t& operator++() { --value; return *this; }
-		reverse_iterator_t operator++(int) { return iterator_t(value--); }
-		reverse_iterator_t& operator--() { ++value; return *this; }
-		reverse_iterator_t operator--(int) { return iterator_t(value++); }
-		reverse_iterator_t operator + (int v) { return { value - v }; }
-		reverse_iterator_t operator - (int v) { return { value + v }; }
-		reverse_iterator_t& operator += (int v) { value -= v; return *this; }
-		reverse_iterator_t& operator -= (int v) { value += v; return *this; }
+		/// Copying
+		rev_it(const rev_it&) = default;
+		rev_it& operator = (const rev_it&) = default;
 
-		T& operator *() const { return *value; }
-		T& operator ->() const { return *value; }
+		/// Comparison
+		bool				operator == (const rev_it& inRHS) const { return mValue == inRHS.mValue; }
+		bool				operator != (const rev_it& inRHS) const { return mValue != inRHS.mValue; }
 
-		iterator base() const { return value; }
+		/// Arithmetics
+		rev_it& operator ++ () { --mValue; return *this; }
+		rev_it				operator ++ (int) { return rev_it(mValue--); }
+		rev_it& operator -- () { ++mValue; return *this; }
+		rev_it				operator -- (int) { return rev_it(mValue++); }
 
-		reverse_iterator_t& operator = (reverse_iterator_t other) { value = other.value; return *this; }
-		bool operator == (reverse_iterator_t other) const { return value == other.value; }
-		bool operator != (reverse_iterator_t other) const { return value != other.value; }
+		rev_it				operator + (int inValue) { return rev_it(mValue - inValue); }
+		rev_it				operator - (int inValue) { return rev_it(mValue + inValue); }
+
+		rev_it& operator += (int inValue) { mValue -= inValue; return *this; }
+		rev_it& operator -= (int inValue) { mValue += inValue; return *this; }
+
+		/// Access
+		T& operator * () const { return *mValue; }
+		T& operator -> () const { return *mValue; }
+
+	private:
+		T* mValue;
 	};
+
+	/// A const iterator that traverses the array in reverse order
+	class crev_it
+	{
+	public:
+		/// Constructor
+		crev_it() = default;
+		explicit			crev_it(const T* inValue) : mValue(inValue) {}
+
+		/// Copying
+		crev_it(const crev_it&) = default;
+		explicit			crev_it(const rev_it& inValue) : mValue(inValue.mValue) {}
+		crev_it& operator = (const crev_it&) = default;
+		crev_it& operator = (const rev_it& inRHS) { mValue = inRHS.mValue; return *this; }
+
+		/// Comparison
+		bool				operator == (const crev_it& inRHS) const { return mValue == inRHS.mValue; }
+		bool				operator != (const crev_it& inRHS) const { return mValue != inRHS.mValue; }
+
+		/// Arithmetics
+		crev_it& operator ++ () { --mValue; return *this; }
+		crev_it				operator ++ (int) { return crev_it(mValue--); }
+		crev_it& operator -- () { ++mValue; return *this; }
+		crev_it				operator -- (int) { return crev_it(mValue++); }
+
+		crev_it				operator + (int inValue) { return crev_it(mValue - inValue); }
+		crev_it				operator - (int inValue) { return crev_it(mValue + inValue); }
+
+		crev_it& operator += (int inValue) { mValue -= inValue; return *this; }
+		crev_it& operator -= (int inValue) { mValue += inValue; return *this; }
+
+		/// Access
+		const T& operator * () const { return *mValue; }
+		const T& operator -> () const { return *mValue; }
+
+	private:
+		const T* mValue;
+	};
+
+	using reverse_iterator = rev_it;
+	using const_reverse_iterator = crev_it;
 
 private:
 	/// Move elements from one location to another
@@ -79,17 +134,17 @@ private:
 		{
 			if (inDestination < inSource)
 			{
-				for (T *destination_end = inDestination + inCount; inDestination < destination_end; ++inDestination, ++inSource)
+				for (T* destination_end = inDestination + inCount; inDestination < destination_end; ++inDestination, ++inSource)
 				{
-					::new (inDestination) T(std::move(*inSource));
+					new (inDestination) T(std::move(*inSource));
 					inSource->~T();
 				}
 			}
 			else
 			{
-				for (T *destination = inDestination + inCount - 1, *source = inSource + inCount - 1; destination >= inDestination; --destination, --source)
+				for (T* destination = inDestination + inCount - 1, *source = inSource + inCount - 1; destination >= inDestination; --destination, --source)
 				{
-					::new (destination) T(std::move(*source));
+					new (destination) T(std::move(*source));
 					source->~T();
 				}
 			}
@@ -101,32 +156,32 @@ private:
 	{
 		JPH_ASSERT(inNewCapacity > 0 && inNewCapacity >= mSize);
 
-		pointer pointer;
+		pointer ptr;
 		if constexpr (AllocatorHasReallocate<Allocator>::sValue)
 		{
 			// Reallocate data block
-			pointer = get_allocator().reallocate(mElements, mCapacity, inNewCapacity);
+			ptr = get_allocator().reallocate(mElements, mCapacity, inNewCapacity);
 		}
 		else
 		{
 			// Copy data to a new location
-			pointer = get_allocator().allocate(inNewCapacity);
+			ptr = get_allocator().allocate(inNewCapacity);
 			if (mElements != nullptr)
 			{
-				move(pointer, mElements, mSize);
+				move(ptr, mElements, mSize);
 				get_allocator().deallocate(mElements, mCapacity);
 			}
 		}
-		mElements = pointer;
+		mElements = ptr;
 		mCapacity = inNewCapacity;
 	}
 
 	/// Destruct elements [inStart, inEnd - 1]
 	inline void				destruct(size_type inStart, size_type inEnd)
 	{
-		if constexpr (!is_trivially_destructible<T>())
+		if constexpr (!std::is_trivially_destructible<T>())
 			if (inStart < inEnd)
-				for (T *element = mElements + inStart, *element_end = mElements + inEnd; element < element_end; ++element)
+				for (T* element = mElements + inStart, *element_end = mElements + inEnd; element < element_end; ++element)
 					element->~T();
 	}
 
@@ -144,22 +199,22 @@ public:
 		destruct(inNewSize, mSize);
 		reserve(inNewSize);
 
-		if constexpr (!is_trivially_constructible<T>())
-			for (T *element = mElements + mSize, *element_end = mElements + inNewSize; element < element_end; ++element)
-				::new (element) T;
+		if constexpr (!std::is_trivially_constructible<T>())
+			for (T* element = mElements + mSize, *element_end = mElements + inNewSize; element < element_end; ++element)
+				new (element) T;
 		mSize = inNewSize;
 	}
 
 	/// Resize array to new length and initialize all elements with inValue
-	inline void				resize(size_type inNewSize, const T &inValue)
+	inline void				resize(size_type inNewSize, const T& inValue)
 	{
 		JPH_ASSERT(&inValue < mElements || &inValue >= mElements + mSize, "Can't pass an element from the array to resize");
 
 		destruct(inNewSize, mSize);
 		reserve(inNewSize);
 
-		for (T *element = mElements + mSize, *element_end = mElements + inNewSize; element < element_end; ++element)
-			::new (element) T(inValue);
+		for (T* element = mElements + mSize, *element_end = mElements + inNewSize; element < element_end; ++element)
+			new (element) T(inValue);
 		mSize = inNewSize;
 	}
 
@@ -209,7 +264,7 @@ public:
 		reserve(size_type(std::distance(inBegin, inEnd)));
 
 		for (Iterator element = inBegin; element != inEnd; ++element)
-			::new (&mElements[mSize++]) T(*element);
+			new (&mElements[mSize++]) T(*element);
 	}
 
 	/// Replace the contents of this array with inList
@@ -218,56 +273,56 @@ public:
 		clear();
 		reserve(size_type(inList.size()));
 
-		for (const T &v : inList)
-			::new (&mElements[mSize++]) T(v);
+		for (const T& v : inList)
+			new (&mElements[mSize++]) T(v);
 	}
 
 	/// Default constructor
-							Array() = default;
+	Array() = default;
 
 	/// Constructor with allocator
-	explicit inline			Array(const Allocator &inAllocator) :
+	explicit inline			Array(const Allocator& inAllocator) :
 		Allocator(inAllocator)
 	{
 	}
 
 	/// Constructor with length
-	explicit inline			Array(size_type inLength, const Allocator &inAllocator = { }) :
+	explicit inline			Array(size_type inLength, const Allocator& inAllocator = { }) :
 		Allocator(inAllocator)
 	{
 		resize(inLength);
 	}
 
 	/// Constructor with length and value
-	inline					Array(size_type inLength, const T &inValue, const Allocator &inAllocator = { }) :
+	inline					Array(size_type inLength, const T& inValue, const Allocator& inAllocator = { }) :
 		Allocator(inAllocator)
 	{
 		resize(inLength, inValue);
 	}
 
 	/// Constructor from initializer list
-	inline					Array(std::initializer_list<T> inList, const Allocator &inAllocator = { }) :
+	inline					Array(std::initializer_list<T> inList, const Allocator& inAllocator = { }) :
 		Allocator(inAllocator)
 	{
 		assign(inList);
 	}
 
 	/// Constructor from iterator
-	inline					Array(const_iterator inBegin, const_iterator inEnd, const Allocator &inAllocator = { }) :
+	inline					Array(const_iterator inBegin, const_iterator inEnd, const Allocator& inAllocator = { }) :
 		Allocator(inAllocator)
 	{
 		assign(inBegin, inEnd);
 	}
 
 	/// Copy constructor
-	inline					Array(const Array<T, Allocator> &inRHS) :
+	inline					Array(const Array<T, Allocator>& inRHS) :
 		Allocator(inRHS.get_allocator())
 	{
 		assign(inRHS.begin(), inRHS.end());
 	}
 
 	/// Move constructor
-	inline					Array(Array<T, Allocator> &&inRHS) noexcept :
+	inline					Array(Array<T, Allocator>&& inRHS) noexcept :
 		Allocator(std::move(inRHS.get_allocator())),
 		mSize(inRHS.mSize),
 		mCapacity(inRHS.mCapacity),
@@ -285,43 +340,43 @@ public:
 	}
 
 	/// Get the allocator
-	inline Allocator &		get_allocator()
+	inline Allocator& get_allocator()
 	{
 		return *this;
 	}
 
-	inline const Allocator &get_allocator() const
+	inline const Allocator& get_allocator() const
 	{
 		return *this;
 	}
 
 	/// Add element to the back of the array
-	inline void				push_back(const T &inValue)
+	inline void				push_back(const T& inValue)
 	{
 		JPH_ASSERT(&inValue < mElements || &inValue >= mElements + mSize, "Can't pass an element from the array to push_back");
 
 		grow();
 
-		T *element = mElements + mSize++;
-		::new (element) T(inValue);
+		T* element = mElements + mSize++;
+		new (element) T(inValue);
 	}
 
-	inline void				push_back(T &&inValue)
+	inline void				push_back(T&& inValue)
 	{
 		grow();
 
-		T *element = mElements + mSize++;
-		::new (element) T(std::move(inValue));
+		T* element = mElements + mSize++;
+		new (element) T(std::move(inValue));
 	}
 
 	/// Construct element at the back of the array
 	template <class... A>
-	inline T &				emplace_back(A &&... inValue)
+	inline T& emplace_back(A &&... inValue)
 	{
 		grow();
 
-		T *element = mElements + mSize++;
-		::new (element) T(std::forward<A>(inValue)...);
+		T* element = mElements + mSize++;
+		new (element) T(std::forward<A>(inValue)...);
 		return *element;
 	}
 
@@ -363,7 +418,7 @@ public:
 	}
 
 	/// Swap the contents of two arrays
-	void					swap(Array<T, Allocator> &inRHS) noexcept
+	void					swap(Array<T, Allocator>& inRHS) noexcept
 	{
 		std::swap(get_allocator(), inRHS.get_allocator());
 		std::swap(mSize, inRHS.mSize);
@@ -382,18 +437,18 @@ public:
 
 			grow(num_elements);
 
-			T *element_begin = mElements + first_element;
-			T *element_end = element_begin + num_elements;
+			T* element_begin = mElements + first_element;
+			T* element_end = element_begin + num_elements;
 			move(element_end, element_begin, mSize - first_element);
 
-			for (T *element = element_begin; element < element_end; ++element, ++inBegin)
-				::new (element) T(*inBegin);
+			for (T* element = element_begin; element < element_end; ++element, ++inBegin)
+				new (element) T(*inBegin);
 
 			mSize += num_elements;
 		}
 	}
 
-	void					insert(const_iterator inPos, const T &inValue)
+	void					insert(const_iterator inPos, const T& inValue)
 	{
 		JPH_ASSERT(&inValue < mElements || &inValue >= mElements + mSize, "Can't pass an element from the array to insert");
 
@@ -402,14 +457,15 @@ public:
 
 		grow();
 
-		T *element = mElements + first_element;
+		T* element = mElements + first_element;
 		move(element + 1, element, mSize - first_element);
 
-		::new (element) T(inValue);
+		new (element) T(inValue);
 		mSize++;
 	}
 
-	const_iterator					erase(const_iterator inIter)
+	/// Remove one element from the array
+	iterator				erase(const_iterator inIter)
 	{
 		size_type p = size_type(inIter - begin());
 		JPH_ASSERT(p < mSize);
@@ -417,18 +473,11 @@ public:
 		if (p + 1 < mSize)
 			move(mElements + p, mElements + p + 1, mSize - p - 1);
 		--mSize;
-		return inIter; // return iterator to one after erased, which is the same memory address as the input.
-	}
-
-	/// Remove one element from the array
-	iterator					erase(iterator inIter)
-	{
-		erase(static_cast<const_iterator>(inIter));
-		return inIter; // return iterator to one after erased, which is the same memory address as the input.
+		return const_cast<iterator>(inIter);
 	}
 
 	/// Remove multiple element from the array
-	const_iterator					erase(const_iterator inBegin, const_iterator inEnd)
+	iterator				erase(const_iterator inBegin, const_iterator inEnd)
 	{
 		size_type p = size_type(inBegin - begin());
 		size_type n = size_type(inEnd - inBegin);
@@ -437,13 +486,7 @@ public:
 		if (p + n < mSize)
 			move(mElements + p, mElements + p + n, mSize - p - n);
 		mSize -= n;
-		return inBegin; // return iterator to one after erased, which is the same memory address as the input.
-	}
-
-	iterator					erase(iterator inBegin, iterator inEnd)
-	{
-		erase(static_cast<const_iterator>(inBegin), static_cast<const_iterator>(inEnd));
-		return inBegin;
+		return const_cast<iterator>(inBegin);
 	}
 
 	/// Iterators
@@ -457,14 +500,34 @@ public:
 		return mElements + mSize;
 	}
 
+	inline crev_it			rbegin() const
+	{
+		return crev_it(mElements + mSize - 1);
+	}
+
+	inline crev_it			rend() const
+	{
+		return crev_it(mElements - 1);
+	}
+
 	inline const_iterator	cbegin() const
 	{
-		return mElements;
+		return begin();
 	}
 
 	inline const_iterator	cend() const
 	{
-		return mElements + mSize;
+		return end();
+	}
+
+	inline crev_it			crbegin() const
+	{
+		return rbegin();
+	}
+
+	inline crev_it			crend() const
+	{
+		return rend();
 	}
 
 	inline iterator			begin()
@@ -477,89 +540,91 @@ public:
 		return mElements + mSize;
 	}
 
-	inline reverse_iterator_t rbegin() {
-		return { mElements + mSize - 1 };
+	inline rev_it			rbegin()
+	{
+		return rev_it(mElements + mSize - 1);
 	}
 
-	inline reverse_iterator_t rend() {
-		return { mElements - 1 };
+	inline rev_it			rend()
+	{
+		return rev_it(mElements - 1);
 	}
 
-	inline const T *		data() const
+	inline const T* data() const
 	{
 		return mElements;
 	}
 
-	inline T *				data()
+	inline T* data()
 	{
 		return mElements;
 	}
 
 	/// Access element
-	inline T &				operator [] (size_type inIdx)
+	inline T& operator [] (size_type inIdx)
 	{
 		JPH_ASSERT(inIdx < mSize);
 		return mElements[inIdx];
 	}
 
-	inline const T &		operator [] (size_type inIdx) const
+	inline const T& operator [] (size_type inIdx) const
 	{
 		JPH_ASSERT(inIdx < mSize);
 		return mElements[inIdx];
 	}
 
 	/// Access element
-	inline T &				at(size_type inIdx)
+	inline T& at(size_type inIdx)
 	{
 		JPH_ASSERT(inIdx < mSize);
 		return mElements[inIdx];
 	}
 
-	inline const T &		at(size_type inIdx) const
+	inline const T& at(size_type inIdx) const
 	{
 		JPH_ASSERT(inIdx < mSize);
 		return mElements[inIdx];
 	}
 
 	/// First element in the array
-	inline const T &		front() const
+	inline const T& front() const
 	{
 		JPH_ASSERT(mSize > 0);
 		return mElements[0];
 	}
 
-	inline T &				front()
+	inline T& front()
 	{
 		JPH_ASSERT(mSize > 0);
 		return mElements[0];
 	}
 
 	/// Last element in the array
-	inline const T &		back() const
+	inline const T& back() const
 	{
 		JPH_ASSERT(mSize > 0);
 		return mElements[mSize - 1];
 	}
 
-	inline T &				back()
+	inline T& back()
 	{
 		JPH_ASSERT(mSize > 0);
 		return mElements[mSize - 1];
 	}
 
 	/// Assignment operator
-	Array<T, Allocator> &	operator = (const Array<T, Allocator> &inRHS)
+	Array<T, Allocator>& operator = (const Array<T, Allocator>& inRHS)
 	{
-		if (static_cast<const void *>(this) != static_cast<const void *>(&inRHS))
+		if (static_cast<const void*>(this) != static_cast<const void*>(&inRHS))
 			assign(inRHS.begin(), inRHS.end());
 
 		return *this;
 	}
 
 	/// Assignment move operator
-	Array<T, Allocator> &	operator = (Array<T, Allocator> &&inRHS) noexcept
+	Array<T, Allocator>& operator = (Array<T, Allocator>&& inRHS) noexcept
 	{
-		if (static_cast<const void *>(this) != static_cast<const void *>(&inRHS))
+		if (static_cast<const void*>(this) != static_cast<const void*>(&inRHS))
 		{
 			destroy();
 
@@ -578,7 +643,7 @@ public:
 	}
 
 	/// Assignment operator
-	Array<T, Allocator> &	operator = (std::initializer_list<T> inRHS)
+	Array<T, Allocator>& operator = (std::initializer_list<T> inRHS)
 	{
 		assign(inRHS);
 
@@ -586,7 +651,7 @@ public:
 	}
 
 	/// Comparing arrays
-	bool					operator == (const Array<T, Allocator> &inRHS) const
+	bool					operator == (const Array<T, Allocator>& inRHS) const
 	{
 		if (mSize != inRHS.mSize)
 			return false;
@@ -596,7 +661,7 @@ public:
 		return true;
 	}
 
-	bool					operator != (const Array<T, Allocator> &inRHS) const
+	bool					operator != (const Array<T, Allocator>& inRHS) const
 	{
 		if (mSize != inRHS.mSize)
 			return true;
@@ -606,10 +671,23 @@ public:
 		return false;
 	}
 
+	/// Get hash for this array
+	uint64					GetHash() const
+	{
+		// Hash length first
+		uint64 ret = Hash<uint32>{ } (uint32(size()));
+
+		// Then hash elements
+		for (const T* element = mElements, *element_end = mElements + mSize; element < element_end; ++element)
+			HashCombine(ret, *element);
+
+		return ret;
+	}
+
 private:
 	size_type				mSize = 0;
 	size_type				mCapacity = 0;
-	T *						mElements = nullptr;
+	T* mElements = nullptr;
 };
 
 JPH_NAMESPACE_END
@@ -623,30 +701,14 @@ namespace std
 	template <class T, class Allocator>
 	struct hash<JPH::Array<T, Allocator>>
 	{
-		size_t operator () (const JPH::Array<T, Allocator> &inRHS) const
+		size_t operator () (const JPH::Array<T, Allocator>& inRHS) const
 		{
-			std::size_t ret = 0;
-
-			// Hash length first
-			JPH::HashCombine(ret, inRHS.size());
-
-			// Then hash elements
-			for (const T &t : inRHS)
-				JPH::HashCombine(ret, t);
-
-			return ret;
+			return std::size_t(inRHS.GetHash());
 		}
 	};
-
-	template< class T, class Alloc, class Pred >
-	constexpr typename JPH::Array<T, Alloc>::size_type erase_if(JPH::Array<T, Alloc>& c, Pred&& pred) {
-		auto it = std::remove_if(c.begin(), c.end(), pred);
-		auto r = c.end() - it;
-		c.erase(it, c.end());
-		return r;
-	}
 }
 
 JPH_SUPPRESS_WARNING_POP
 
 #endif // JPH_USE_STD_VECTOR
+

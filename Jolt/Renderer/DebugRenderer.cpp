@@ -17,9 +17,8 @@ DebugRenderer *DebugRenderer::sInstance = nullptr;
 // Number of LOD levels to create
 static const int sMaxLevel = 4;
 
-// Distance for each LOD level, these are tweaked for an object of approx.
-// size 1. Use the lod scale to scale these distances.
-static const float sLODDistanceForLevel[] = {5.0f, 10.0f, 40.0f, FLT_MAX};
+// Distance for each LOD level, these are tweaked for an object of approx. size 1. Use the lod scale to scale these distances.
+static const float sLODDistanceForLevel[] = { 5.0f, 10.0f, 40.0f, cLargeFloat };
 
 DebugRenderer::Triangle::Triangle(Vec3Arg inV1, Vec3Arg inV2, Vec3Arg inV3,
                                   ColorArg inColor) {
@@ -807,7 +806,7 @@ void DebugRenderer::DrawBox(RMat44Arg inMatrix, const AABox &inBox,
 
 	RMat44 m = RMat44::sScale(Vec3::sMax(inBox.GetExtent(), Vec3::sReplicate(1.0e-6f))); // Prevent div by zero when one of the edges has length 0
 	m.SetTranslation(RVec3(inBox.GetCenter()));
-	DrawGeometry(m, inColor, mBox, ECullMode::CullBackFace, inCastShadow, inDrawMode);
+	DrawGeometry(inMatrix * m, inColor, mBox, ECullMode::CullBackFace, inCastShadow, inDrawMode);
 }
 
 void DebugRenderer::DrawSphere(RVec3Arg inCenter, float inRadius,
@@ -1201,9 +1200,18 @@ void DebugRenderer::DrawPie(RVec3Arg inCenter, float inRadius, Vec3Arg inNormal,
 
 void JPH::DebugRenderer::RunGarbageCollection() {
   auto garbageCollectFunc = [](auto &container) {
-    std::erase_if(container, [](auto &&entry) { return !entry.second->mUsedLastFrame; });
-    for (auto &&entry : container)
-      entry.second->mUsedLastFrame = false;
+	std::vector<decltype(container.begin()->first)> keys_to_remove;
+	for (auto&& entry : container) {
+		if(!entry.second->mUsedLastFrame) {
+			entry.second->mUsedLastFrame = false;
+			keys_to_remove.emplace_back(entry.first);
+		}
+		entry.second->mUsedLastFrame = false;
+	}
+
+	for (auto&& key : keys_to_remove) {
+		container.erase(key);
+	}
   };
 
   garbageCollectFunc(mPieLimits);
